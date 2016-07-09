@@ -1,0 +1,100 @@
+@import url('entity-page.css');
+@import url('entity-form.css');
+@import url('entity-grid.css');
+@import url('entity-filter.css');
+@import url('entity-modal.css');
+
+section#contentContainer div.entity-listgrid-action-row{
+    margin-bottom: 15px;
+}
+
+section#contentContainer div.entity-grid-container{
+
+}
+
+section#contentContainer .entity-content-main{
+    margin-left: 0;
+    background: #fff;
+    width: 100%;
+    border: 2px solid #CCC;
+    float: right;
+    position: relative;
+    border-top: 0px;
+    padding: 15px 15px 15px 15px;
+}
+
+section#contentContainer ol.breadcrumb {
+    padding: 4px 15px;
+    margin-bottom: 0px;
+    display: inline-block;
+}
+
+section#contentContainer ol.breadcrumb li:last-child > span{
+    text-transform: capitalize;
+    
+}
+
+.action-group{
+    text-align: right;
+    /* padding-right: 6px; */
+}
+.action-group .action-control,
+.action-group .action-control .btn {
+    display: inline-block;
+    padding-bottom: 2px;
+    padding-top: 2px;
+}
+
+a.entity-form-modal-view{
+    margin-left: 5px;
+}
+
+.date-input-group{max-width: 18em;}
+.date-input-group span.fa{
+    line-height: 28px;
+    height: 28px;
+}
+
+input.datepicker {
+	display: inline-block;
+}
+
+.datepicker-container {
+	display: block;
+    white-space: nowrap;
+}
+
+.datepicker-container:hover, input.datepicker:hover {
+	cursor: pointer;
+}
+
+.ui-datepicker-title,
+.ui-datepicker-calendar th,
+.ui-datepicker-calendar td {
+	font-size: 11px;
+}
+
+.ui-datepicker {
+	width: 14em !important;
+	z-index: 3000 !important;
+}
+.ui-timepicker-div dt{
+    font-weight: initial;
+    
+}
+.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+.ui-timepicker-div dl { text-align: left; margin-bottom: 10px;}
+.ui-timepicker-div dl dt { height: 25px; margin-bottom: -20px; font-size: 11px; }
+.ui-timepicker-div dl dt.ui_tpicker_time_label { margin-bottom: -25px; }
+.ui-timepicker-div dl dt.ui_tpicker_timezone_label { margin-top: 6px; }
+.ui-timepicker-div dl dd { padding-top: 5px; margin: 0 10px 5px 65px; font-size: 11px; }
+.ui-timepicker-div dl dd.ui_tpicker_time {padding-top: 0;}
+.ui-timepicker-div dl dd.ui_tpicker_timezone{padding-left: 15px;}
+.ui-timepicker-div td { font-size: 90%; }
+.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; font-size: 11px; }
+
+.ui-timepicker-rtl{ direction: rtl; }
+.ui-timepicker-rtl dl { text-align: right; }
+.ui-timepicker-rtl dl dd { margin: 0 65px 10px 10px; }
+
+.ui-datepicker-buttonpane button { font-size: 11px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }

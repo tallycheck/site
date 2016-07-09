@@ -1,0 +1,22 @@
+.modal .modal-title .title {
+    display: inline;
+    font-size: 18px;
+}
+
+.modal .modal-title .title-tools {
+    display: inline;
+    float: right;
+    margin: 0 20px 0 0;
+}
+
+.modal .modal-body .message{
+    text-align: center;
+    font-size: 16px;
+    padding: 20px 0;
+}
+.modal .modal-body .progress{
+
+}
+.modal .modal-body .progress-bar{
+    background-color: #CCC;
+}

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>site</artifactId>
+        <groupId>com.taoswork.tallycheck</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>user-site</artifactId>
+    <packaging>war</packaging>
+    <properties>
+        <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
+        <!-- httpsPort and httpPort are used by embeded jetty server.-->
+        <!-- Make sure the following httpsPort matches what's in the runtime-properties file,  -->
+        <httpsPort>8447</httpsPort>
+        <httpPort>8084</httpPort>
+        <jettyStopPort>9964</jettyStopPort>
+    </properties>
+
+    <build>
+        <outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
+        <finalName>user-site</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webappDirectory>${webappDirectory}</webappDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>8.1.5.v20120716</version>
+                <configuration>
+                    <webAppSourceDirectory>${webappDirectory}</webAppSourceDirectory>
+                    <!-- <contextPath>/admin</contextPath> -->
+
+                    <!-- !!!!! WARNING !!!!!! -->
+                    <!-- This configuration of Jetty is not as secure as it causes Sessions to use a java.util.Random
+                        vs. java.security.SecureRandom. This speeds up startup times locally but this should not be used
+                        in production -->
+                    <jettyXml>jetty-server.xml</jettyXml>
+                    <!-- !!!!! WARNING !!!!!! -->
+
+                    <stopPort>${jettyStopPort}</stopPort>
+                    <stopKey>foo</stopKey>
+
+                    <connectors>
+                        <connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+                            <port>${httpPort}</port>
+                            <maxIdleTime>60000</maxIdleTime>
+                        </connector>
+                        <connector implementation="org.eclipse.jetty.server.ssl.SslSelectChannelConnector">
+                            <port>${httpsPort}</port>
+                            <keystore>${webappDirectory}/WEB-INF/tallycheck-user.keystore</keystore>
+                            <keyPassword>tallybook</keyPassword>
+                            <password>tallybook</password>
+                        </connector>
+                    </connectors>
+                    <webAppConfig>
+                        <allowDuplicateFragmentNames>true</allowDuplicateFragmentNames>
+                    </webAppConfig>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <!-- http://tomcat.apache.org/maven-plugin-2.2/tomcat7-maven-plugin/deploy-mojo.html -->
+                <!-- http://bitbybitblog.com/deploy-to-tomcat/ -->
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.2</version>
+
+                <configuration>
+                    <path>/${project.artifactId}</path>
+                    <port>${httpPort}</port>
+                    <httpsPort>${httpsPort}</httpsPort>
+                    <keystoreFile>${webappDirectory}/WEB-INF/tallycheck-user.keystore</keystoreFile>
+                    <keystorePass>tallybook</keystorePass>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>keytool-maven-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <id>clean</id>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <id>generateKeyPair</id>
+                        <goals>
+                            <goal>generateKeyPair</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <keystore>${webappDirectory}/WEB-INF/tallycheck-user.keystore</keystore>
+                    <dname>cn=localhost</dname>
+                    <keypass>tallybook</keypass>
+                    <storepass>tallybook</storepass>
+                    <alias>tallybook</alias>
+                    <keyalg>RSA</keyalg>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.zeroturnaround</groupId>
+                <artifactId>jrebel-maven-plugin</artifactId>
+                <configuration>
+                    <packaging>war</packaging>
+                    <rootPath>${basedir}</rootPath>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-rebel-xml</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
+</project>

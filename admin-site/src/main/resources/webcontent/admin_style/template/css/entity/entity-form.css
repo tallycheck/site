@@ -1,0 +1,91 @@
+.entity-form-container{
+    font-size:13px;
+}
+.entity-form-container .entity-errors{
+
+}
+.entity-form-container .entity-error{
+    display: block;
+}
+
+.entity-form-container .form-control {
+    padding: 3px 8px;
+    height: 28px;
+}
+.entity-form-container .tab-content {
+    padding: 8px 0px 0;
+    overflow-y: auto;
+}
+
+.entity-form-container fieldset.entity-group {
+    border: 1px solid #ccc;
+
+    border-radius: 3px;
+    padding: 5px 10px 10px;
+    background-color: #f8f8f8;
+    text-align: start;
+    margin-bottom: 15px;
+}
+
+.entity-form-container fieldset.entity-group:last-child{
+    padding-bottom: 0;
+    
+    margin-bottom: 0;
+}
+
+.entity-form-container .entity-group > legend{
+    width: initial;
+
+    font-size: 13px;
+    border: 1px solid;
+    padding: 0 10px;
+    margin-left: -11px;
+    margin-bottom: auto;
+    background-color: #FAFAFA;      
+    border-color: #ccc;
+    border-radius: 3px;
+    border-bottom-left-radius: 0;
+    font-weight: bold;
+}
+
+.entity-form-container div.field-box{
+    margin: 5px 0 12px;
+}
+.entity-form-container div.field-box:last-child{
+    /* margin-bottom: 0; */
+}
+
+.entity-form-container div.field-box div.field-label-group{
+    font-weight: bold;
+}
+
+.entity-form-container div.field-box .radio-options{
+    padding-left: 20px;
+}
+
+.entity-form-container div.field-box .radio-options .option{
+    font-weight: normal;
+    margin-right: 10px;
+}
+
+.entity-form-container .field-label-group .error{
+    font-weight: lighter;
+    display: block;
+}
+
+.entity-form-container .field-label-group .field-label{
+    margin-right: 10px;
+}
+
+.entity-form-container .field-label-group .field-label.required:after{
+    content: " *";
+}
+
+.field-box .drop-entity{
+    margin-right: 5px;
+    color: rgb(170, 170, 170);
+}
+
+.field-box .drop-entity:active{
+    color: #111111;
+}

@@ -1,0 +1,11 @@
+<section th:fragment="content">
+  <ul>
+    <li th:each="error : ${errors}">
+      <span th:text="${error}">Error</span>
+    </li>
+  </ul>
+
+</section>
+
+<div th:fragment="scripts">
+</div>

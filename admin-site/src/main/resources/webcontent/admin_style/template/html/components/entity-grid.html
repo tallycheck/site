@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="../../lib/font-awesome-4.3.0/css/font-awesome.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../lib/bootstrap-3.3.4/css/bootstrap.css"/>
+
+  <link rel="stylesheet" type="text/css" href="../../css/foundation.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/admin.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/admin-layout.css"/>
+  <link rel="stylesheet" type="text/css" href="../../lib/jquery/plugins/jquery.custom-scrollbar.css"/>
+
+  <link rel="stylesheet" type="text/css" href="../../css/component/general.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/entity/entity.css"/>
+
+</head>
+<body>
+<div th:fragment="full_entity_grid">
+  <comment th:remove="all">
+    <!--entity grid, use parameter:-->
+    <!-- isTemplate=true,false -->
+    <!-- scope="main","normal"-->
+    <!-- alignType="window","none" -->
+    <!-- alignOffset="50","0" />-->
+    <!-- data : EntityQueryResponse -->
+
+  </comment>
+  <div class="entity-grid-autofill"
+       th:classappend="${isTemplate}?'entity-grid-container-template':'entity-grid-container'"
+       th:attr="data-grid-scope=${scope}?:'normal',
+        data-align-type=${alignType}?:'none',
+        data-align-offset=${alignOffset}?:'0'"
+       data-recordranges=""
+       data-totalrecords="0"
+       data-pagesize="0">
+    <div class="data-content"><p th:attr="data-content=${data}?:''"></p></div>
+    <div class="toolbar row">
+      <div class="search-group" style="display: none">
+        <div class="input-group">
+          <button class="btn search-btn" type="button"><i class="fa fa-filter"></i></button>
+          <span class="search-text">
+            <span class="search-input-element">
+              <i class="fa fa-search embed-hint"></i>
+              <input class="search-input" data-name="" placeholder="" type="text"/>
+              <i class="fa fa-times-circle embed-delete"></i>
+            </span>
+          </span>
+        </div>
+      </div>
+      <div class="grid-action-group-container"
+           th:include="components/entity-actions"
+           th:with="editSuccessRedirect=false"></div>
+      <form method="POST" class="post-agent" th:action="null"></form>
+    </div>
+    <div class="header">
+      <table class="table header-table table-condensed table-hover">
+        <thead>
+        <tr></tr>
+        </thead>
+      </table>
+    </div>
+
+    <div class="body default-skin ">
+      <table class="table body-table table-condensed table-hover">
+        <thead>
+        <tr class="width-control-header"></tr>
+        </thead>
+        <tbody class="real-data">
+        <tr class="empty-mark" style="display: none;" >
+          <td class="entity-grid-no-results" th:inline="text">
+            [[#{general.NoRecordsFound}]]
+          </td>
+        </tr>
+        <!--/*-->
+        <!-- FOLLOWING WILL BE DELETED BY THYMELEAF -->
+        <tr data-entity-id="0" data-entity-type="xx.xx.xx.Xxx" data-entity-path="/xx/0"
+            data-entity-name="Name">
+        </tr>
+        <!--*/-->
+        </tbody>
+      </table>
+
+    </div>
+    <span class="spinner" style="display: none;">
+      <i class="spinner-item fa fa-spin fa-spinner"></i>
+    </span>
+
+    <div class="footer">
+      <div>
+          <span>
+            <span class="screen-range-of-results"
+                  th:utext="#{general.ScreenRange_OfResults_Unescaped}"/>
+          </span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <script type="text/javascript" src="../../lib/jquery/jquery-2.1.4.js"></script>
+  <script type="text/javascript" src="../../lib/jquery/plugins/jquery.ba-dotimeout.min.js"></script>
+  <script type="text/javascript" src="../../lib/jquery/plugins/jquery.custom-scrollbar.min.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/range.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/entity-grid.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/entity-scroll-grid.js"></script>
+  <script type="text/javascript" src="../../js/admin/admin-init.js"></script>
+</footer>
+</body>
+</html>

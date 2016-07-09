@@ -1,0 +1,21 @@
+
+section {
+    /* border: 1px solid red;
+    */
+}
+
+a {
+    color: #8eaa28;
+    text-decoration: none;
+}
+
+nav.header-bar{
+    margin-bottom: 10px;
+}
+
+section#sideMenuContainer {
+    margin-left: 0;
+    width: 20%;
+    float: left;
+    padding: 0 5px 0 2px
+}

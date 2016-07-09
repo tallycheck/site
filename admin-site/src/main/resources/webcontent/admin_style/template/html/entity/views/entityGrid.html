@@ -1,0 +1,11 @@
+<section th:fragment="content">
+
+  <div th:include="components/entity-grid :: full_entity_grid "
+       th:with="data=${queryResult},
+       isTemplate=false"/>
+
+  <!--<div th:include="components/entity-grid :: full_entity_grid (scope='main')"-->
+       <!--th:with="data=${queryResult}"/>-->
+</section>
+<div th:fragment="scripts">
+</div>

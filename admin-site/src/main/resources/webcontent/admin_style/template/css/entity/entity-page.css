@@ -1,0 +1,45 @@
+
+body {
+    background: #e9e9e9;
+    padding-top: 70px;
+}
+
+section#contentContainer {
+    margin-left: 0;
+    width: 80%;
+    background: #fff;
+    float: right;
+    position: relative;
+}
+
+div.message-dict,
+div.data-map,
+.entity-form-container > div.data-content,
+.entity-grid-container > div.data-content {
+    display: none;
+}
+
+.entity-content-breadcrumbs{
+    padding-bottom: 4px;
+    padding-top: 4px;
+    margin-left: 0;
+    background: #fff;
+    width: 100%;
+    border: 2px solid #CCC;
+    background-color: #f5f5f5;
+    float: right;
+    position: relative;
+    border-bottom: 2px solid #8eaa2b;
+}
+
+.entity-content-breadcrumbs .breadcrumb-section{
+    float: left;
+}
+.entity-content-breadcrumbs .actions-section{
+    float: right;
+    margin-right: 15px;
+}
+
+div.template{
+    /* display: none; */
+}

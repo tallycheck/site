@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<!-- This main frame file contains page components as following -->
+<!--
+  entity_head         <head/>
+  entity_header       <header/>
+  entity_header_bar   <nav/>
+  entity_side_nav     <nav/>
+  entity_content      <section/>
+  . entity_content_breadcrumbs
+  . entity_main
+  . . entity_list
+  . . . entity_list_action (include search / add / refresh ...)
+  . . . entity_list_grid
+  . . entity_form
+  entity_footer <footer>
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:fragment="entity_head">
+  <meta charset="utf-8"/>
+  <meta http-equiv="Content-Language" content="en-us"/>
+  <meta http-equiv="Content-Author" content="TallyBook"/>
+  <meta name="viewport" content="width=device-width"/>
+
+  <title th:text="#{Admin_Title}">TallyBook Admin</title>
+
+  <!-- Libs -->
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/jquery/plugins/jquery.custom-scrollbar.css}"
+        href="../../lib/jquery/plugins/jquery.custom-scrollbar.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/jquery-ui-1.11.4.custom/jquery-ui.min.css}"
+        href="../../lib/jquery-ui-1.11.4.custom/jquery-ui.min.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/timepicker/jquery-ui-timepicker-addon.css}"
+        href="../../lib/timepicker/jquery-ui-timepicker-addon.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/font-awesome-4.3.0/css/font-awesome.min.css}"
+        href="../../lib/font-awesome-4.3.0/css/font-awesome.min.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/bootstrap-3.3.4/css/bootstrap.css}"
+        href="../../lib/bootstrap-3.3.4/css/bootstrap.css"/>
+
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/summernote-0.6.16/summernote.css}"
+        href="../../lib/summernote-0.6.16/summernote.css"/>
+
+  <!-- Components -->
+  <link rel="stylesheet" type="text/css" th:href="@{/css/component/general.css}" href="../../css/component/slide-show.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/css/component/menu/nav-menu.css}"
+        href="../../css/component/menu/nav-menu.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/css/entity/entity.css}" href="../../css/entity/entity.css"/>
+
+  <!-- Page -->
+  <link rel="stylesheet" type="text/css" th:href="@{/css/foundation.css}" href="../../css/foundation.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/css/admin.css}" href="../../css/admin.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/css/admin-layout.css}" href="../../css/admin-layout.css"/>
+
+  <!--/*-->
+  <style>
+    .release-hide{ }
+  </style>
+  <!--*/-->
+  <!--/*/
+    <style th:if="${production}">
+      .production-hide{
+        display: none;
+      }
+    </style>
+  </head>
+  /*/-->
+
+  <body>
+
+<nav class="nav navbar-inverse navbar-fixed-top header-bar" th:fragment="entity_header_bar">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#tbaNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Tally Book
+      </a>
+    </div>
+    <div class="collapse navbar-collapse" id="tbaNavbar">
+      <tb_admin:value tb_admin:admin_employee="adminUser"/>
+      <ul class="nav navbar-nav navbar-right">
+
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+            <span class="glyphicon glyphicon-user"></span>
+            <span th:text="${person.name}">Andy</span>
+            <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Personal Setting</a></li>
+            <li class="divider"/>
+            <li><a href="#">Change Password</a></li>
+          </ul>
+        </li>
+        <li>
+          <form name="logoutform" method="post" th:action="@{/adminLogout.htm}">
+            <input type="submit" class="hidden"/>
+          </form>
+          <a href="javascript:document.logoutform.submit()">
+            <span class="glyphicon glyphicon-log-out"></span> Log out
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+  <section id="sideMenuContainer" th:fragment="entity_side_nav">
+    <nav class="nav" id="sideMenu"></nav>
+  </section>
+
+  <section th:fragment="entity-template">
+    <div class="slide-show left production-hide" style="width: 90%;z-index: 100;">
+      <div class="indexer">
+        <span>Grid Template</span>
+      </div>
+      <div class="content">
+        <div th:include="components/templates/grid-template :: full-template"
+             class="template grid-template"/>
+      </div>
+    </div>
+    <div class="slide-show left production-hide" style="width: 90%;;margin-top: 50px;z-index: 101;">
+      <div class="indexer">
+        <span>Form Template</span>
+      </div>
+      <div class="content">
+        <div th:include="components/templates/form-template :: full-template"
+             class="template form-template"/>
+      </div>
+    </div>
+  </section>
+  <div th:inline="text" th:fragment="entity_content_breadcrumbs"
+       class="entity-content-breadcrumbs">
+    <div class="breadcrumb-section" id="breadcrumbSection"></div>
+    <div class="actions-section entity-main-action-group"></div>
+  </div>
+  <div class="entity-content-main" th:fragment="entity_main">
+    <div th:replace="${'entity/views/' + viewType}:: content" />
+  </div>
+</div>
+
+<footer th:fragment="entity_footer">
+  <div class="message-dict">
+    <p th:if="${messageDict}" th:attr="data-message-dict=${messageDict}"></p>
+  </div>
+  <script type="text/javascript" th:src="@{/lib/uri/uri-templates.js}"
+          src="../../lib/uri/uri-templates.js"></script>
+  <!-- jQuery -->
+  <!-- <script src="//jquery.com/jquery-wp-content/themes/jquery/js/jquery-1.11.2.min.js"></script> -->
+  <script type="text/javascript" th:src="@{/lib/jquery/jquery-2.1.4.js}"
+          src="../../lib/jquery/jquery-2.1.4.min.js"></script>
+  <script type="text/javascript" th:src="@{/lib/jquery-ui/jquery-ui.js}"
+          src="../../lib/jquery-ui/jquery-ui.js"></script>
+  <script type="text/javascript" th:src="@{/lib/timepicker/jquery-ui-timepicker-addon.js}"
+          src="../../lib/timepicker/jquery-ui-timepicker-addon.js"></script>
+  <script type="text/javascript" th:src="@{/lib/jquery/plugins/jquery.ba-dotimeout.min.js}"
+          src="../../lib/jquery/plugins/jquery.ba-dotimeout.min.js"></script>
+  <script type="text/javascript" th:src="@{/lib/jquery/plugins/jquery.custom-scrollbar.js}"
+          src="../../lib/jquery/plugins/jquery.custom-scrollbar.js"></script>
+
+  <!-- Libs -->
+  <script type="text/javascript" th:src="@{/lib/bootstrap-3.3.4/js/bootstrap.min.js}"
+          src="../../lib/bootstrap-3.3.4/js/bootstrap.min.js"></script>
+  <script type="text/javascript" th:src="@{/lib/foundation/js/foundation/foundation.js}"
+          src="../../lib/foundation/js/foundation/foundation.js"></script>
+  <script type="text/javascript" th:src="@{/lib/foundation/js/foundation/foundation.accordion.js}"
+          src="../../lib/foundation/js/foundation/foundation.accordion.js"></script>
+  <script type="text/javascript" th:src="@{/lib/summernote-0.6.16/summernote.min.js}"
+          src="../../lib/summernote-0.6.16/summernote.min.js"></script>
+
+  <!-- Components -->
+  <script type="text/javascript" th:src="@{/js/component/general.js}"
+          src="../../js/component/general.js"></script>
+
+  <!-- Components -->
+  <script type="text/javascript" th:src="@{/js/tallybook/debug.js}"
+          src="../../js/tallybook/debug.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/ajax.js}"
+          src="../../js/tallybook/ajax.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/utils.js}"
+          src="../../js/tallybook/utils.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/range.js}"
+          src="../../js/tallybook/range.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/modal-stack.js}"
+          src="../../js/tallybook/modal-stack.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/menu.js}"
+          src="../../js/tallybook/menu.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-data.js}"
+          src="../../js/tallybook/entity-data.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-actions.js}"
+          src="../../js/tallybook/entity-actions.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-grid-cell.js}"
+          src="../../js/tallybook/entity-grid-cell.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-grid-filter.js}"
+          src="../../js/tallybook/entity-grid-filter.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-grid.js}"
+          src="../../js/tallybook/entity-grid.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/history.js}"
+          src="../../js/tallybook/history.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/tabholder.js}"
+          src="../../js/tallybook/tabholder.js"></script>
+
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-scroll-grid.js}"
+          src="../../js/tallybook/entity-scroll-grid.js"></script>
+  <script type="text/javascript" th:src="@{/js/tallybook/entity-form.js}"
+          src="../../js/tallybook/entity-form.js"></script>
+
+  <script type="text/javascript" th:src="@{/lib/jquery/jquery-2.1.4.js}"
+          src="../../lib/jquery/jquery-2.1.4.min.js"></script>
+  <script th:attr="data-main=@{/js/admin/admin-main.js}" th:src="@{/lib/require.js}" src="../../lib/require.js"></script>
+
+  <!-- content script -->
+  <div th:replace="${'entity/views/' + viewType}:: scripts" />
+
+  <!-- Page logic -->
+  <script type="text/javascript" th:src="@{/js/admin/admin-init.js}"
+          src="../../js/admin/admin-init.js"></script>
+
+</footer>
+
+</body>
+</html>

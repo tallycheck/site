@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+
+  <link rel="stylesheet" type="text/css" href="../../lib/font-awesome-4.3.0/css/font-awesome.min.css"/>
+  <link rel="stylesheet" type="text/css" href="../../lib/bootstrap-3.3.4/css/bootstrap.css"/>
+
+  <link rel="stylesheet" type="text/css" href="../../css/foundation.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/admin.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/admin-layout.css"/>
+  <link rel="stylesheet" type="text/css" href="../../lib/jquery/plugins/jquery.custom-scrollbar.css"/>
+
+  <link rel="stylesheet" type="text/css" href="../../css/component/general.css"/>
+  <link rel="stylesheet" type="text/css" href="../../css/entity/entity.css"/>
+
+  <style>
+    table.entity-field-template-table{
+      width: 100%;
+    }
+    table.entity-field-template-table,
+    .entity-field-template-table > thead,
+    .entity-field-template-table > tbody,
+    .entity-field-template-table > tfoot,
+    .entity-field-template-table tr.filters-table-row,
+    .entity-field-template-table tr.filters-table-row > th,
+    .entity-field-template-table tr.filters-table-row > td {
+      border: 1px solid black;
+      background-color: white;
+      padding: 5px;
+    }
+
+    .entity-field-template-table tr.filters-table-row > td > ul.entity-filter {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+<div th:fragment="full-template">
+  <p class="template-group">
+    Form Frame Template
+  </p>
+  <div>
+    <div th:include="components/entity-form :: full_entity_form "
+         th:with="isTemplate=true, scope='normal'"/>
+  </div>
+
+  <table class="entity-field-template-table"  th:inline="text">
+    <thead>
+    <tr>
+      <th style="width: 20%;">Field Type</th>
+      <th class="toggle" style="width: 40%;">Edit layout</th>
+      <th class="toggle" style="width: 40%;">Readonly layout</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <td>Basic</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="string" data-support-field-types="basic,string,email,default">
+          <input type="text" class="form-control content"/>
+        </div>
+      </td>
+      <td>
+        <div class="readonly-field-box form-group" data-form-field-type="string" data-support-field-types="basic,string,email,default">
+          <span class="content"/>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Date</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="date" data-support-field-types="date">
+          <div class="date-input-group has-feedback">
+            <input type="text" class="date-input form-control"/>
+            <span class="fa fa-calendar form-control-feedback" aria-hidden="true"></span>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="readonly-field-box form-group" data-form-field-type="date" data-support-field-types="date">
+          <div class="date-input-group">
+            <span class="date-input"/>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Enum</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="enum" data-support-field-types="enumeration">
+          <select class="options form-control">
+            <option value="example_a">Example A</option>
+            <option value="example_b">Example B</option>
+          </select>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Boolean</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="boolean" data-support-field-types="boolean">
+          <div class="radio-options">
+            <label class="option">
+              <input type="radio" name="radio-name-placeholder" value="true"/>
+              <span>[[#{general.boolean.true}]]</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="radio-name-placeholder" value="false"/>
+              <span>[[#{general.boolean.false}]]</span>
+            </label>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Html</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="html" data-support-field-types="html,html_basic">
+          <div class="html-editor"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Foreign Key</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="foreign_key" data-support-field-types="foreign_key,external_foreign_key">
+          <div class="foreign-key-value-container" data-entity-type="" data-id-field="" data-display-field="">
+            <span class="display-value-none-selected">[[#{general.NoValueSelected}]]</span>
+            <span class="display-value read-only" style="display: none;"></span>
+            <i class="fa fa-times-circle entity-btn drop-entity"></i>
+            <button class="btn btn-default btn-sm entity-btn to-one-lookup tiny radius secondary button hover-cursor" type="button"
+                    data-select-url="">
+              <i class="fa fa-search"></i>[[#{general.lookup}]]
+            </button>
+            <span class="external-link-container">
+               <a class="entity-form-modal-view" data-foreign-key-link="" href="">
+                 <i class="fa fa-external-link"></i>
+               </a>
+            </span>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td>Collection</td>
+      <td>
+        <div class="field-box form-group" data-form-field-type="collection" data-support-field-types="collection">
+          <div class="grid-slot"></div>
+        </div>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  <script type="text/javascript" src="../../lib/jquery/jquery-2.1.4.js"></script>
+  <script type="text/javascript" src="../../lib/jquery/plugins/jquery.ba-dotimeout.min.js"></script>
+  <script type="text/javascript" src="../../lib/jquery/plugins/jquery.custom-scrollbar.min.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/range.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/entity-grid.js"></script>
+  <script type="text/javascript" src="../../js/tallybook/entity-grid.js"></script>
+  <script type="text/javascript" src="../../js/admin/admin-init.js"></script>
+</footer>
+
+</body>
+</html>
