@@ -147,7 +147,7 @@
             </dependency>
             <dependency>
                 <groupId>com.taoswork.tallybook</groupId>
-                <artifactId>business-tallymanagement-datadomain</artifactId>
+                <artifactId>business-tallybus-datadomain</artifactId>
                 <version>${tallybook.framework.version}</version>
             </dependency>
             <dependency>
