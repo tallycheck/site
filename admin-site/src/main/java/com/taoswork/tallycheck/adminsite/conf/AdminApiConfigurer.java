@@ -19,8 +19,8 @@ public class AdminApiConfigurer extends WebMvcConfigurerAdapter {
         return new BeanCreationMonitor("AdminApi");
     }
 
-    @Bean
-    TallyApiController tallyApiController(){
-        return new TallyApiController();
-    }
+//    @Bean
+//    TallyApiController tallyApiController(){
+//        return new TallyApiController();
+//    }
 }

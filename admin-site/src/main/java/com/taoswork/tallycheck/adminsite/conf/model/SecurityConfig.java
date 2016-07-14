@@ -1,6 +1,7 @@
 package com.taoswork.tallycheck.adminsite.conf.model;
 
 import com.taoswork.tallycheck.admincore.security.detail.AdminEmployeeDetailsService;
+import com.taoswork.tallycheck.admincore.security.detail.impl.PersonAuthenticationProvider;
 import com.taoswork.tallycheck.adminsite.web.authentication.AdminUserAuthenticationFailureHandler;
 import com.taoswork.tallycheck.adminsite.web.authentication.AdminUserAuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
@@ -34,7 +35,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String loginPage = "/login";
 
     @Resource(name = AdminEmployeeDetailsService.COMPONENT_NAME)
-    private UserDetailsService adminEmployeeDetailsService;
+    private AdminEmployeeDetailsService adminEmployeeDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder(){
@@ -60,8 +61,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+
+        PersonAuthenticationProvider provider = new PersonAuthenticationProvider();
+        provider.setPersonDetailsService(adminEmployeeDetailsService);
+
         auth.userDetailsService(adminEmployeeDetailsService)
                 .passwordEncoder(passwordEncoder());
+
+//        auth.authenticationProvider()
 
  //       super.configure(auth);
     }
