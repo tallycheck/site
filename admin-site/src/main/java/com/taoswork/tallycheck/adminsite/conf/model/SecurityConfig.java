@@ -37,11 +37,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Resource(name = AdminEmployeeDetailsService.COMPONENT_NAME)
     private AdminEmployeeDetailsService adminEmployeeDetailsService;
 
-    @Bean
-    public PasswordEncoder passwordEncoder(){
-        return NoOpPasswordEncoder.getInstance();
-        //return new StandardPasswordEncoder();
-    }
+//    @Bean
+//    public PasswordEncoder passwordEncoder(){
+//        return NoOpPasswordEncoder.getInstance();
+//        //return new StandardPasswordEncoder();
+//    }
 
     @Bean
     AuthenticationSuccessHandler successHandler(){
@@ -64,9 +64,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         PersonAuthenticationProvider provider = new PersonAuthenticationProvider();
         provider.setPersonDetailsService(adminEmployeeDetailsService);
+        auth.authenticationProvider(provider);
 
-        auth.userDetailsService(adminEmployeeDetailsService)
-                .passwordEncoder(passwordEncoder());
+//        auth.userDetailsService(adminEmployeeDetailsService)
+//                .passwordEncoder(passwordEncoder());
 
 //        auth.authenticationProvider()
 
