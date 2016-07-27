@@ -18,3 +18,6 @@ buildNumber.properties
 rebel.xml
 derby.log
 *.log
+**/rebel.xml
+**/.rebel.xml.bak
+**/.rebel-remote.xml.bak

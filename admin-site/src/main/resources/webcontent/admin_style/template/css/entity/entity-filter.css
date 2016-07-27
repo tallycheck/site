@@ -41,7 +41,7 @@
     background: transparent !important;
 }
 
-.entity-filter.enum-filter{
+.entity-filter .enum-filter{
     min-width: 150px;
 }
 
@@ -163,22 +163,22 @@
 }
 
 /* Entity Input Element: option element */
-.entity-filter.option-filter input[type=radio]{
+.entity-filter .option-filter input[type=radio]{
     margin: 0 3px 0 10px;
 }
-.entity-filter.option-filter input[type=checkbox]{
+.entity-filter .option-filter input[type=checkbox]{
     margin: 0 3px 0 10px;
 }
-.entity-filter.option-filter a.reset{
+.entity-filter .option-filter a.reset{
     /* float: right; */
     bottom: 0;
     vertical-align: bottom;
 }
 
-.entity-filter.option-filter .option{
+.entity-filter .option-filter .option{
     display: block;
 }
-.entity-filter.option-filter .option span{
+.entity-filter .option-filter .option span{
     font-weight: initial;
 }
 

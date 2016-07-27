@@ -7,14 +7,15 @@ var tallybook = tallybook || {};
 (function ($, host) {
   'use strict';
 
-  var EntityContext = function (info, infos) {
+  var EntityContext = function (info, basicInfo) {
     this.info = info;
-    if ($.isPlainObject(infos)) {
-      this.beanUri = infos.beanUri;
-      this.idField = infos.idField;
-      this.nameField = infos.nameField;
-      this.type = infos.type;
-      this.ceilingType = infos.ceilingType;
+    var bi = basicInfo;
+    if ($.isPlainObject(bi)) {
+      this.beanUri = bi.beanUri;
+      this.idField = bi.idField;
+      this.nameField = bi.nameField;
+      this.type = bi.type;
+      this.ceilingType = bi.ceilingType;
     }else{
       this.type = info.type;
     }
@@ -101,7 +102,7 @@ var tallybook = tallybook || {};
       return this._entityContext;
     },
     _makeEntityContext : function(){
-      return new EntityContext(this.info(), this.infos());
+      return new EntityContext(this.info(), this.infos().basic);
     }
   }
 
