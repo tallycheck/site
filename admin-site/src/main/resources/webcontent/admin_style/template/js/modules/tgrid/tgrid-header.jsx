@@ -88,6 +88,18 @@ define(["jquery", "underscore",
 
     var FilterHolder = React.createClass({
       statics : {
+        getFilterName :function(fh){
+          var fi = fh.props.fieldinfo;
+          return fi.name;
+        },
+        getFilterKey:function(fh){
+          var fi = fh.props.fieldinfo;
+          return fi.name;
+        },
+        getSorterKey:function(fh){
+          var fi = fh.props.fieldinfo;
+          return "sort_"+fi.name;
+        },
         makeFilter: function (fieldinfo, gridinfo, grid) {
           var fi = fieldinfo;
           var fieldName = fi.name;
@@ -101,67 +113,95 @@ define(["jquery", "underscore",
         }
       },
       getInitialState :function() {
-        var filterKey = this.getFilterKey();
-        var sorterKey = this.getSorterKey();
+        var filterKey = FilterHolder.getFilterKey(this);
+        var sorterKey = FilterHolder.getSorterKey(this);
         return {
-          isOpen: false,
-          filterVal:"",
-          sorterVal:Orders.DEFAULT,
-          filterKey:filterKey,
-          sorterKey:sorterKey
+          filterShown: false,
+          filterKey: filterKey,
+          filterVal: "",
+          sorterKey: sorterKey,
+          sorterVal: Orders.DEFAULT,
+          version: 0
         };
       },
-      clickDocument: function(e) {
-        if (ReactDOM.findDOMNode(this).contains(e.target)) {// Inside of the component.
-        } else {
-          if(this.state.isOpen)
-            this.setState({isOpen : false});
-        }
-      },
-      fireFilter : function(){
-        if(this.state.isOpen)
-          this.setState({isOpen : false});
-        var grid = this.props.grid;
-        grid.doLoadByUi();
-      },
       componentDidMount: function() {
-        $(document).bind('click', this.clickDocument);
+        $(document).bind('click', this.onEventClickDocument);
         var fire = this.refs.filter.refs.fire;
         if(fire){
-          $(fire).on("click", this, this.fireFilter);
+          $(fire).on("click", this, this.onEventClickFilterButton);
         }
       },
       componentWillUnmount: function() {
-        $(document).unbind('click', this.clickDocument);
+        $(document).unbind('click', this.onEventClickDocument);
         var fire = this.refs.filter.refs.fire;
         if(fire){
-          $(fire).off("click", this.fireFilter);
+          $(fire).off("click", this.onEventClickFilterButton);
         }
       },
+      changeString : function(ps, ns) {
+        var oldFVal = ps.filterVal;
+        var newFVal = ns.filterVal;
+        var oldSVal = ps.sorterVal;
+        var newSVal = ns.sorterVal;
+        var cs = " [" + oldFVal + " -> " + newFVal + ", " + oldSVal + " -> " + newSVal + "]";
+        return "" + FilterHolder.getFilterName(this) + cs;
+      },
+      shouldComponentUpdate:function(nextProps, nextState, nextContext){
+        var ps = this.state;
+        var ns = nextState;
+        var oldState = _.extend({}, ps, {version:0});
+        var newState = _.extend({}, ns, {version:0});
+        if(!_.isEqual(nextProps, this.props) ||
+          !_.isEqual(newState, oldState) ||
+          !_.isEqual(nextContext, this.context)){
+          return true;
+        }
+        return false;
+      },
+      componentWillUpdate:function(nextProps, nextState, nextContext, transaction){
+        var ps = this.state;
+        var ns = nextState;
+
+        console.log("holder will update: " + this.changeString(ps, ns));
+      },
       componentDidUpdate:function(prevProps, prevState){
-        if(prevState.isOpen && !(this.state.isOpen)){
+        if(prevState.filterShown && !(this.state.filterShown)){
           //close
           var filter = this.refs.filter;
           var param = filter.getParam();
-          this.setState({filterVal : param}, this.fireFilter);
+          this.setState({filterVal : param});
+        }
+        var ps = prevState;
+        var ns = this.state;
+        console.log("holder did update: " + this.changeString(ps, ns));
+        var requireUpdate = (prevState.filterVal != this.state.filterVal ||
+          prevState.sorterVal != this.state.sorterVal);
+        if(requireUpdate){
+          var grid = this.props.grid;
+          grid.requestDoFilterByFilters(this);
         }
       },
-      handleFilterIconClick :function (){
-        this.setState({isOpen : !this.state.isOpen});
+      onEventClickDocument: function(e) {
+        if (ReactDOM.findDOMNode(this).contains(e.target)) {// Inside of the component.
+        } else {
+          if(this.state.filterShown) {
+            this.setState({filterShown: false, version:0});
+          }
+        }
       },
-      handleSortIconClick :function (){
+      onEventClickFilterButton : function(){
+        if(this.state.filterShown){
+          this.setState({filterShown : false, version:0});
+        }
+      },
+      onEventClickFilterIcon :function (){
+        this.setState({filterShown : !this.state.filterShown});
+      },
+      onEventClickSortIcon :function (){
         var nextSortVal = Orders.calcNextOrder(this.state.sorterVal);
         var header = this.props.grid.refs.header;
         header.unsetSorterExcept(this.props.refName);
-        this.setState({sorterVal : nextSortVal}, this.fireFilter);
-      },
-      getFilterKey:function(){
-        var fi = this.props.fieldinfo;
-        return fi.name;
-      },
-      getSorterKey:function(){
-        var fi = this.props.fieldinfo;
-        return "sort_"+fi.name;
+        this.setState({sorterVal : nextSortVal, version:0});
       },
       render  :function(){
         var fi = this.props.fieldinfo;
@@ -175,14 +215,14 @@ define(["jquery", "underscore",
           var sortActiveCn = sortActive? "sort-active" : "";
           var sortFa = Orders.fa(this.state.sorterVal);
           sortIcon = <i ref="sortIcon"
-                onClick={this.handleSortIconClick}
-                className={"sort-icon fa fa-sort " + sortFa}></i>;
+                        onClick={this.onEventClickSortIcon}
+                        className={"sort-icon fa fa-sort " + sortFa}></i>;
         }
         var filterIcon = '';
         if(fi.supportFilter){
           var filterActiveCn = (!!this.state.filterVal)? "filter-active" : "";
           filterIcon = <i ref="filterIcon"
-                          onClick={this.handleFilterIconClick}
+                          onClick={this.onEventClickFilterIcon}
                           className="filter-icon fa fa-filter"></i>;
         }
 
@@ -193,7 +233,7 @@ define(["jquery", "underscore",
               <div className={"filter-sort-container " + sortActiveCn + " " + filterActiveCn}>
                 {sortIcon}
                 {filterIcon}
-                <ul ref="filterBox" style={{"display":this.state.isOpen ? "block" : "none"}} className="entity-filter no-hover">
+                <ul ref="filterBox" style={{"display":this.state.filterShown ? "block" : "none"}} className="entity-filter no-hover">
                   <FilterType ref="filter" fieldinfo={fi}  gridnamespace={gns}/>
                 </ul>
               </div>
@@ -225,9 +265,22 @@ define(["jquery", "underscore",
           cparameter:"",
           sorter : ''};
       },
+      shouldComponentUpdate:function(nextProps, nextState, nextContext){
+        var ps = this.state;
+        var ns = nextState;
+        var oldState = _.extend({}, ps, {version:0});
+        var newState = _.extend({}, ns, {version:0});
+        if(!_.isEqual(nextProps, this.props) ||
+          !_.isEqual(newState, oldState) ||
+          !_.isEqual(nextContext, this.context)){
+          return true;
+        }
+        return false;
+      },
       componentDidUpdate:function(prevProps, prevState){
         if((prevState.cparameter) != (this.state.cparameter)){
           var cparam = this.state.cparameter;
+          var version = this.state.version;
           var paramObj = UrlUtil.ParamsUtils.stringToData(cparam);
           var fhs = this.getAllFilterHolder();
           _.each(fhs, function(fh){
@@ -238,7 +291,7 @@ define(["jquery", "underscore",
               var filterVal = paramObj[filterKey];
               filter.setParamByValueArray(filterVal);
               filterVal = filter.getParam();
-              fh.setState({filterVal :filterVal});
+              fh.setState({filterVal :filterVal, version:version});
             }
             if(fi.supportSort){
               var sorterKey = fh.state.sorterKey;
@@ -248,11 +301,9 @@ define(["jquery", "underscore",
               }else{
                 sorterVal = Orders.DEFAULT;
               }
-
-              fh.setState({sorterVal :sorterVal});
+              fh.setState({sorterVal :sorterVal, version:version});
             }
           });
-//          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
         }
       },
       render: function () {

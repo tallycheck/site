@@ -33,7 +33,7 @@ define(["jquery",
         return this.grid.state.recordRanges;
       },
       getPageSize : function(){
-        return this.grid.state.getPageSize;
+        return this.grid.state.pageSize;
       },
       getQueryUri:function(){
         return this.grid.props.queryUri;
@@ -139,14 +139,15 @@ define(["jquery",
         var pageSize = this.getPageSize();
         var parameter = this.getParameter();
         var cparameter = this.gatherCriteriaParameter();
-        var allParam = UrlUtil.ParamsUtils.connect(parameter, cparameter);
+        var allParam = UrlUtil.ParamsUtils.connect(cparameter, parameter);
         var url = UrlUtil.getUrlWithParameterString(allParam, null, queryUrl);
         if(range){
           var start = range.lo; start = (start < 0)? null:start;
           url = UrlUtil.getUrlWithParameter(ReservedParameter.StartIndex, start, null, url);
           pageSize = Math.min(range.width(), pageSize);
         }
-        url = UrlUtil.getUrlWithParameter(ReservedParameter.PageSize, pageSize, null, url);
+        if(pageSize)
+          url = UrlUtil.getUrlWithParameter(ReservedParameter.PageSize, pageSize, null, url);
         return url;
       },
       buildInScreenLoadUrl : function(){

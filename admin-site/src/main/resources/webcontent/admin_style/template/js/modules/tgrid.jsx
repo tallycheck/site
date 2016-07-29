@@ -86,6 +86,8 @@ define(["jquery", "underscore","datamap","math",
         LoadSource: {UI: "ui", URL: "url", PARAMETER: 'parameter', NONE: 'none'}
       },
       maxHeight:0,
+      //Grid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> Grid.stateUpdate
+      avoidReverseRequestByVersion : 1,
       getDefaultProps: function () {
         return {
           maxVisibleRows: undefined,
@@ -141,13 +143,6 @@ define(["jquery", "underscore","datamap","math",
         };
         footer.setState(obj);
       },
-      componentDidUpdate:function(prevProps, prevState){
-        if((prevState.cparameter) != (this.state.cparameter)){
-          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
-        }
-        this.doResize();
-        this.onVisibleRangeUpdate();
-      },
       componentDidMount:function(){
         var node = ReactDOM.findDOMNode(this);
         new ResizeSensor(node, this.doResize);
@@ -156,6 +151,29 @@ define(["jquery", "underscore","datamap","math",
       componentWillUnmount:function(){
         var node = ReactDOM.findDOMNode(this);
         ResizeSensor.detach(node, this.doResize);
+      },
+      shouldComponentUpdate:function(nextProps, nextState, nextContext){
+        if(!_.isEqual(nextProps, this.props) ||
+          !_.isEqual(nextState, this.state) ||
+          !_.isEqual(nextContext, this.context)){
+          return true;
+        }
+        return false;
+      },
+      componentWillUpdate:function(nextProps, nextState,nextContext, transaction){
+        if((this.state.cparameter) != (nextState.cparameter)){
+          this.avoidReverseRequestByVersion ++;
+        }
+        console.log("GRID will update");
+      },
+      componentDidUpdate:function(prevProps, prevState, prevContext, rootNode){
+        if((prevState.cparameter) != (this.state.cparameter)){
+          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
+          console.log("GRID cparameter changed");
+        }
+        this.doResize();
+        this.onVisibleRangeUpdate();
+        console.log("GRID did update");
       },
       render: function () {
         var entityContext = this.props.entityContext;
@@ -180,8 +198,22 @@ define(["jquery", "underscore","datamap","math",
           </div>
           );
       },
+      onCriteriaParameterUpdate : function(prevCparam, nextCparam){
+        if(nextCparam == prevCparam)
+          return;
+        var header = this.refs.header;
+
+        header.setState({cparameter : nextCparam, version:this.avoidReverseRequestByVersion});
+      },
       dataAccess : function(){
         return new GridDataAccess(this);
+      },
+      requestDoFilterByFilters : function (caller) {
+        console.log("requestDoFilterByFilters");
+        var callerVersion = caller.state.version;
+        if(this.avoidReverseRequestByVersion == callerVersion)
+          return;
+        this.doLoadByFilters();
       },
       doLoad : function(loadEvent){
         switch (loadEvent.source){
@@ -194,38 +226,33 @@ define(["jquery", "underscore","datamap","math",
             return;
         }
       },
-      loadByUrl : function (url, fresh) {
+      doLoadByUrl : function (url, fresh) {
         var _grid = this;
         var handlers = {
           ondata: function (/*ondata*/ response) {
-            var queryResponse = dm.queryResponse(response.data);
-            Grid.updateStateBy(_grid, queryResponse, fresh);
+            var queryResult = response.data;
+//            var queryResponse = dm.queryResponse(response.data);
+            Grid.updateStateBy(_grid, queryResult, true);
           }
         };
         console.log("will load url: " + url);
-        //ajax.get({
-        //  url:url,
-        //  success:function (response) {
-        //    if (handlers.ondata) {
-        //      handlers.ondata(response);
-        //    }
-        //  },
-        //  complete:function(jqXHR, textStatus){
-        //  }
-        //
-        //});
+        ajax.get({
+          url:url,
+          success:function (response) {
+            if (handlers.ondata) {
+              handlers.ondata(response);
+            }
+          },
+          complete:function(jqXHR, textStatus){
+          }
+
+        });
       },
-      doLoadByUi : function(){
+      doLoadByFilters : function(){
         var cparam = this.dataAccess().gatherCriteriaParameter();
         this.setState({'cparameter' : cparam});
-      },
-      onCriteriaParameterUpdate : function(prevCparam, nextCparam){
-        if(nextCparam == prevCparam)
-          return;
-        var header = this.refs.header;
-        header.setState({cparameter : nextCparam});
-        var loadUrl = this.dataAccess().buildLoadUrl();
-        this.loadByUrl(loadUrl, true);
+        var url = this.dataAccess().buildLoadUrl();
+        this.doLoadByUrl(url, true);
       }
     });
 
