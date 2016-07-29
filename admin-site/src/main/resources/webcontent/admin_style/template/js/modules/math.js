@@ -150,7 +150,7 @@ define(["underscore"], function(_){
     },
     merge: function (ranges) {
       var result = [];
-      ranges.forEach(function (item) {
+      _.each(ranges, function (item) {
         if (result.length == 0) {
           result.push(item);
         } else {
@@ -163,7 +163,7 @@ define(["underscore"], function(_){
     },
     intersect: function (ranges, range) {
       var result = [];
-      ranges.forEach(function (item, index, array) {
+      _.each(ranges, function (item) {
         var ri = item.intersect(range);
         if (ri) {
           result.push(ri);
@@ -203,14 +203,19 @@ define(["underscore"], function(_){
   };
 
   var Ranges = function(spec){
+    var _this = this;
     if(_.isString(spec)){
       throw new Error("Ranges does not support string spec.");
-    }else if(_.isArray(spec)){
-      this.ranges = _.map(spec, function(e){return new Range(e)});
-    }else{
+    }else {
       this.ranges = [];
-      if(spec != undefined){
-        this.ranges.push(new Range(spec));
+      if (_.isArray(spec)) {
+        _.each(spec, function (e) {
+          _this.add(new Range(e));
+        });
+      } else {
+        if (spec != undefined) {
+          _this.add(new Range(spec));
+        }
       }
     }
   }
@@ -220,6 +225,12 @@ define(["underscore"], function(_){
     },
     containsIndex : function (i){
       return RangeArrayHelper.containsIndex(this.ranges, i);
+    },
+    first : function(){
+      if(this.ranges.length > 0){
+        return this.ranges[0];
+      }
+      return null;
     },
     intersect: function(range){
       var nRanges = RangeArrayHelper.intersect(this.ranges, range);

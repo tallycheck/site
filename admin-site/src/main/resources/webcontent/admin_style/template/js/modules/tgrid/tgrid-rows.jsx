@@ -1,15 +1,11 @@
-define(["jquery", "underscore", "i18n!nls/entitytext", "datamap"],
-  function ($, _, entitytext, dm) {
-
+define(["jquery", "underscore",
+    "datamap","math",
+    "i18n!nls/entitytext"],
+  function ($, _, dm, math,
+            entitytext) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
-    //var CellContainer = React.createClass({
-    //  render : function(){
-    //    var fieldName = this.props.
-    //    return <td data-fieldname="name" data-fieldvalue="admin25" style="display: table-cell;"><a href="/person/56f8c90dc98d9124e8cc176b">admin25</a></td>
-    //  }
-    //});
     var Cells = (function(){
       class CellBase extends React.Component {
 
@@ -174,6 +170,7 @@ define(["jquery", "underscore", "i18n!nls/entitytext", "datamap"],
       var CellType = Cells.getComponentType(fieldinfo.fieldType);
       return React.createElement(CellType, props);
     }
+
     var makeCell = function(entityCtx, fieldinfo, bean){
       var fieldname = fieldinfo.name;
       var fieldvalue = dm.entityProperty(bean, fieldname);
@@ -193,9 +190,47 @@ define(["jquery", "underscore", "i18n!nls/entitytext", "datamap"],
       return cells;
     }
 
+    var Row = React.createClass({
+      componentDidMount:function(){
+        var body = this.props.body;
+        if(body.rowHeight ==0){
+          var node = ReactDOM.findDOMNode(this);
+          var height = $(node).height();
+          body.updateRowHeight(height);
+        }
+      },
+      render: function () {
+        var entityCtx = this.props.entityContext;
+        var gridinfo = this.props.info;
+        var bean = this.props.bean;
+        var cells = makeCells(entityCtx, gridinfo, bean);
+        return (<tr className="data-row">
+          {cells}
+        </tr>);
+      }
+    });
+    var PaddingRow = React.createClass({
+      render: function () {
+        var range = this.props.range;
+        var padRows = range.width();
+        return (<tr className="padding-row" data-row-count={padRows}></tr>);
+      }
+    });
+    var NoRecordRow = React.createClass({
+      render: function () {
+        var text = entitytext["NO_RECORDS_FOUND"];
+        var span = this.props.colspan;
+        var hasRec = this.props.hasRecord;
+        var style = {"display" : hasRec ? "none" : ""};
+        return (<tr className="empty-mark">
+          <td className="entity-grid-no-results" colSpan={span} style={style}>{text}</td>
+        </tr>);
+      }
+    });
 
     return {
-      makeCells : makeCells
+      Row : Row,
+      PaddingRow : PaddingRow,
+      NoRecordRow : NoRecordRow
     }
-  }
-);
+  });

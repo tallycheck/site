@@ -1,23 +1,27 @@
 define(["jquery", "underscore","datamap","math",
     "perfectScrollbar",
-      'jsx!../modules/tgrid-filter',
-      'jsx!../modules/tgrid-cell',
-      "i18n!nls/entitytext", "ResizeSensor"],
+    './tgrid/tgrid-data',
+    'jsx!./tgrid/tgrid-header',
+    'jsx!./tgrid/tgrid-rows',
+    'jsx!./tgrid/tgrid-toolbar',
+    "i18n!nls/entitytext",
+    "ResizeSensor", "ajax"],
   function ($, _, dm, math,
             Ps,
-            TGridFilter, TGridCell,
-            entitytext, ResizeSensor) {
+            TGridDA,
+            TGridHeader,
+            TGridRow, TGridToolbar,
+            entitytext, ResizeSensor, ajax) {
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Range = math.Range;
     var Ranges = math.Ranges;
-
-    var GAS = {
-      CREATE_ACTION:"create",
-      READ_ACTION:"read",
-      UPDATE_ACTION:"update",
-      DELETE_ACTION:"delete"
-    };
+    var Row = TGridRow.Row;
+    var PaddingRow = TGridRow.PaddingRow;
+    var NoRecordRow = TGridRow.NoRecordRow;
+    var Toolbar = TGridToolbar.Toolbar;
+    var GridDataAccess = TGridDA.GridDataAccess;
+    var Header = TGridHeader.Header;
 
     var LoadEvent = function(source){
       this.source = LoadEvent.Source.UnifiedSource(source);
@@ -44,102 +48,42 @@ define(["jquery", "underscore","datamap","math",
       },
     }
 
-    var GridDataAccess = function(grid){
-      this.grid = grid;
-    }
-    GridDataAccess.prototype = {
-      getAllFilterHolder : function(){
-        var header = this.grid.refs.header;
-        return header.getAllFilterHolder();
-      },
-      gatherCriteriaParameterKeys : function(){
-        var keys = [];
-        var fhs = this.getAllFilterHolder();
-        _.each(fhs, function(fn){
-          var filter = fn.refs.filter;
-          var fi = filter.props.fieldinfo;
-          if(fi.supportSort) {
-            var sorterKey = fn.state.sorterKey;
-            keys.push(sorterKey);
-          }
-          if(fi.supportFilter) {
-            var filterKey = fn.state.filterKey;
-            keys.push(filterKey);
-          }
-        });
-        return keys;
-      },
-      //make parameter string: http://abc.com/xxx?a=1&b=2&b=3&c=4 (support multi-value for a particular key)
-      gatherCriteriaParameter : function(includeAll){
-        var inputsWithVal = [];
-        var pushInput = function(key, value){
-          var $tmpInput = $('<input>', {'name': key, 'value': value});
-          inputsWithVal.push($tmpInput[0]);
-        }
-        var fhs = this.getAllFilterHolder();
-        _.each(fhs, function(fn){
-          var filter = fn.refs.filter;
-          var fi = filter.props.fieldinfo;
-          if(fi.supportSort)
-          {
-            var sorterKey = fn.state.sorterKey;
-            var sorterVal = fn.state.sorterVal;
-            if (includeAll || !!(sorterVal)) {
-              pushInput(sorterKey, sorterVal);
-            }
-          }
-          if(fi.supportFilter)
-          {
-            var filterKey = fn.state.filterKey;
-            var filterVal = fn.state.filterVal;
-            var multiVal = filter.multiValue;
-            if (includeAll || !!(filterVal)) {
-              if(multiVal){
-                var vals = JSON.parse(filterVal);
-                vals.forEach(function(singleVal, index, array){
-                  if($.isPlainObject(singleVal)){
-                    singleVal = JSON.stringify(singleVal);
-                  }
-                  pushInput(filterKey,singleVal);
-                });
-              }else{
-                pushInput(filterKey,filterVal);
-              }
-            }
-          }
-        });
-        return $(inputsWithVal).serialize();
-      }
-    }
-
     var Grid = React.createClass({
       statics: {
         DefaultMaxHeight: 400,
-        updateStateBy : function(grid, queryResult){
+        updateStateBy: function (grid, queryResult, fresh) {
+          fresh = !!(fresh);
           var origState = grid.state;
-          var ranges = origState.recordRanges;
+          var ranges = fresh ? new Ranges() : origState.recordRanges;
+          var beansMap = fresh ? new Object() : origState.beansMap;
 
           var entities = queryResult.entities;
-          var beansMap = origState.beansMap;
           var beans = entities.beans;
           var startIdx = entities.startIndex;
-          if(beans != null){
-            _.each(beans, function(bean, i){
+          var beanCount = 0;
+          if (beans != null) {
+            _.each(beans, function (bean, i) {
               beansMap[startIdx + i] = bean;
             });
+            beanCount = beans.length;
           }
-          var range = new Range(entities.startIndex, entities.startIndex + beans.length);
+          var range = new Range(entities.startIndex, entities.startIndex + beanCount);
           ranges.add(range);
+          var pageSize = entities.pageSize;
+          var fullQuery = queryResult.fullQuery;
+          var paramObj = grid.dataAccess().splitParameter(fullQuery);
+
           var newState = {
-            totalRecords:entities.totalCount,
-            recordRanges:ranges,
-            parameter:"",
-            criterialParameter:"",
-            beansMap : beansMap
+            totalRecords: entities.totalCount,
+            recordRanges: ranges,
+            pageSize: pageSize,
+            parameter: paramObj.parameter,
+            cparameter: paramObj.cparameter,
+            beansMap: beansMap
           };
           grid.setState(newState);
         },
-        LoadSource : {UI : "ui", URL : "url" , PARAMETER : 'parameter', NONE : 'none'}
+        LoadSource: {UI: "ui", URL: "url", PARAMETER: 'parameter', NONE: 'none'}
       },
       maxHeight:0,
       getDefaultProps: function () {
@@ -158,8 +102,9 @@ define(["jquery", "underscore","datamap","math",
           totalRecords:0,
           recordRanges:ranges,
           parameter:"",
-          criterialParameter:"",
-          beansMap : beansMap
+          cparameter:"",
+          beansMap : beansMap,
+          loading : false
         };
       },
       setMaxHeight:function(height){
@@ -191,12 +136,15 @@ define(["jquery", "underscore","datamap","math",
         var totalRecords = this.state.totalRecords;
 
         var obj = {
-          range: new Range(Math.floor(startIndex), Math.ceil(endIndex)),
+          range: new Range(startIndex, endIndex),
           total: totalRecords
         };
         footer.setState(obj);
       },
-      componentDidUpdate:function(){
+      componentDidUpdate:function(prevProps, prevState){
+        if((prevState.cparameter) != (this.state.cparameter)){
+          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
+        }
         this.doResize();
         this.onVisibleRangeUpdate();
       },
@@ -232,6 +180,9 @@ define(["jquery", "underscore","datamap","math",
           </div>
           );
       },
+      dataAccess : function(){
+        return new GridDataAccess(this);
+      },
       doLoad : function(loadEvent){
         switch (loadEvent.source){
           case LoadEvent.Source.UI:
@@ -243,193 +194,41 @@ define(["jquery", "underscore","datamap","math",
             return;
         }
       },
-      doLoadByUi : function(){
-        var gridDataAccess = new GridDataAccess(this);
-        return gridDataAccess.gatherCriteriaParameter();
-      }
-    });
-
-    var Toolbar = React.createClass({
-      render: function () {
-        var gridInfo = this.props.info;
-        return (
-          <div className="toolbar row">
-            <Search gridInfo={gridInfo} actions={this.props.actions} links={this.props.links}/>
-            <Actions actions={this.props.actions} links={this.props.links}/>
-            <form method="POST" className="post-agent" action="">
-              <input type="hidden" name="_csrf" value="f9f562de-5b37-43ce-986e-8614b9737c75"/>
-            </form>
-          </div>
-        );
-      }
-    });
-    var Search = React.createClass({
-      getInitialState: function () {
-        return {searchText: ""};
-      },
-      handleDelClick: function (e) {
-        var inputDom = this.refs.searchInput;
-        var delDom = this.refs.deleteI;
-        inputDom.value = "";
-        inputDom.focus();
-        this.setState({searchText: ""});
-      },
-      handleSearchTextChange: function (event) {
-        var searchText = event.target.value;
-        this.setState({searchText: searchText});
-        var delDom = this.refs.deleteI;
-        var delDisplay = (!!searchText ? "block" : "none");
-      },
-      render: function () {
-        var gridinfo = this.props.gridInfo;
-        if (gridinfo.primarySearchField) {
-          var searchFieldName = gridinfo.primarySearchField;
-          var searchField = _.find(gridinfo.fields, function (f) {
-            return f.name == searchFieldName
-          });
-          var searchFieldNameFriendly = (searchField != null) ? searchField.friendlyName : searchFieldName;
-          var searchText = this.state.searchText;
-          var delStyle = {"display": (!!searchText ? "block" : "none")};
-
-          return (
-            <div className="search-group" data-search-column={searchFieldName}>
-              <div className="input-group">
-                <button className="btn search-btn" type="button"> <i className="fa fa-filter"></i> </button>
-                <span className="search-text">
-                  <span className="search-input-element">
-                    <i className="fa fa-search embed-hint"></i>
-                    <input className="search-input" ref="searchInput" data-name={searchFieldName}
-                           placeholder={searchFieldNameFriendly} defaultValue={searchText}
-                           onChange={this.handleSearchTextChange} type="text"/>
-                    <i className="fa fa-times-circle embed-delete" ref="deleteI" onClick={this.handleDelClick}
-                       style={delStyle}></i>
-                  </span>
-                </span>
-              </div>
-            </div>
-          );
-        } else {
-          return (<div className="search-group"/>);
-        }
-      }
-    });
-    var Actions = React.createClass({
-      actionObj : function(actionName){
-        var links=this.props.links;
-        var actionUri = links[actionName];
-        var actionText = entitytext["GRID_ACTION_" + actionName];
-        return {
-          name:actionName,
-          uri:actionUri,
-          text:actionText};
-      },
-      makeActionButton: function (actionObject, isEntityAction, icon) {
-        var ao = actionObject;
-        var actionName = ao.name;
-        var actionUri = ao.uri;
-        var actionText = ao.text;
-        var btn = (
-          <button type="button" key={actionName} className={"btn btn-default action-control" + isEntityAction ? "entity-action":""}
-                  data-action={actionName}
-                  data-edit-in-modal="true" data-edit-success-redirect="false"
-                  data-action-uri={actionUri}>
-            <span className={"fa " + icon} aria-hidden="true"></span> {actionText}
-          </button>);
-        return btn;
-      },
-      render: function () {
-        var actions=this.props.actions,
-          links=this.props.links,
-          btns = [];
-
-        if(actions.includes(GAS.CREATE_ACTION)){
-            var actionName = GAS.CREATE_ACTION;
-            var ao = this.actionObj(actionName);
-            var actionUri = ao.uri;
-            var actionText = ao.text;
-            var btn = (
-              <button type="button" key={actionName} className="btn btn-default action-control" data-action={actionName}
-                      data-edit-in-modal="true" data-edit-success-redirect="false"
-                      data-action-uri={actionUri}>
-                <span className="fa fa-plus" aria-hidden="true"></span> {actionText}
-              </button>);
-            btns.push(btn);
-        }
-        if(actions.includes(GAS.UPDATE_ACTION)){
-            var actionName = GAS.UPDATE_ACTION;
-            var ao = this.actionObj(actionName);
-            var actionUri = ao.uri;
-            var actionText = ao.text;
-            var btn = (
-                <button type="button" key={actionName} className="btn btn-default action-control entity-action" data-action={actionName}
-                    data-edit-in-modal="true"
-                    data-action-url="" data-edit-success-redirect="false" disabled="disabled"
-                    data-action-uri={actionUri}>
-                    <span className="fa fa-pencil-square-o" aria-hidden="true"></span> {actionText}
-                </button>);
-            btns.push(btn);
-        }
-        if(actions.includes(GAS.DELETE_ACTION)){
-            var actionName = GAS.DELETE_ACTION;
-            var ao = this.actionObj(actionName);
-            var actionUri = ao.uri;
-            var actionText = ao.text;
-            var btn = (
-              <button type="button" key={actionName} className="btn btn-default action-control entity-action" data-action={actionName}
-                    data-action-url="" disabled="disabled"
-                    data-action-uri={actionUri}>
-                    <span className="fa fa-times" aria-hidden="true"></span> {actionText}</button>);
-            btns.push(btn);
-        }
-
-        return (
-          <div className="grid-action-group-container"><div className="action-group">{btns}</div></div>
-        );
-      }
-    });
-    var HeaderColsGroup = React.createClass({
-      render : function(){
-        return (<tr>{this.props.children}</tr>);
-      }
-    });
-    var Header = React.createClass({
-      getDefaultProps : function(){
-        return {
-          info : undefined,
-          gridnamespace : ''
+      loadByUrl : function (url, fresh) {
+        var _grid = this;
+        var handlers = {
+          ondata: function (/*ondata*/ response) {
+            var queryResponse = dm.queryResponse(response.data);
+            Grid.updateStateBy(_grid, queryResponse, fresh);
+          }
         };
+        console.log("will load url: " + url);
+        //ajax.get({
+        //  url:url,
+        //  success:function (response) {
+        //    if (handlers.ondata) {
+        //      handlers.ondata(response);
+        //    }
+        //  },
+        //  complete:function(jqXHR, textStatus){
+        //  }
+        //
+        //});
       },
-      render: function () {
-        var gridinfo = this.props.info;
-        var grid = this.props.grid;
-        var colsNames =[];
-        var cols = _.map(gridinfo.fields, function (fi) {
-          var col = TGridFilter.makeFilter(fi, gridinfo, grid);
-          colsNames.push(col.ref);
-          return col;
-        });
-        this.ColumnsNames = colsNames;
-        return (
-          <div className="header">
-            <table className="table header-table table-condensed table-hover">
-              <thead>
-              <HeaderColsGroup ref="colsGroup">
-                {cols}
-              </HeaderColsGroup>
-              </thead>
-            </table>
-          </div>);
+      doLoadByUi : function(){
+        var cparam = this.dataAccess().gatherCriteriaParameter();
+        this.setState({'cparameter' : cparam});
       },
-      getAllFilterHolder : function(){
-        var _this = this;
-        var colsNames = this.ColumnsNames;
-        var fhs = _.map(colsNames, function(cn){
-          var fh = _this.refs[cn];
-          return fh;
-        });
-        return fhs;
+      onCriteriaParameterUpdate : function(prevCparam, nextCparam){
+        if(nextCparam == prevCparam)
+          return;
+        var header = this.refs.header;
+        header.setState({cparameter : nextCparam});
+        var loadUrl = this.dataAccess().buildLoadUrl();
+        this.loadByUrl(loadUrl, true);
       }
     });
+
     var Body = React.createClass({
       rowHeight : 0,
       updateRowHeight:function(height){
@@ -453,7 +252,16 @@ define(["jquery", "underscore","datamap","math",
         var updater = _this.props.visibleRangeUpdate;
         updater.call(_this);
       },
+      visibleRange:function(){
+        return new Range(this.visibleTopIndex(), this.visibleBottomIndex());
+      },
       visibleTopIndex : function(){
+        return Math.floor(this.visibleTopFloatIndex());
+      },
+      visibleBottomIndex : function(){
+        return Math.ceil(this.visibleBottomFloatIndex());
+      },
+      visibleTopFloatIndex : function(){
         if(this.rowHeight == 0)
           return 0;
         var node = ReactDOM.findDOMNode(this);
@@ -461,7 +269,7 @@ define(["jquery", "underscore","datamap","math",
         var offset = $node[0].offsetTop;
         return offset / this.rowHeight;
       },
-      visibleBottomIndex : function(){
+      visibleBottomFloatIndex : function(){
         if(this.rowHeight == 0)
           return 0;
         var node = ReactDOM.findDOMNode(this);
@@ -472,7 +280,6 @@ define(["jquery", "underscore","datamap","math",
         return offset / this.rowHeight;
       },
       componentDidMount:function(){
-        console.log("Body componentDidMount, rowHeight: " + this.rowHeight);
         var node = ReactDOM.findDOMNode(this);
         var $node = $(node);
         Ps.initialize(node);
@@ -536,43 +343,7 @@ define(["jquery", "underscore","datamap","math",
         </div>);
       }
     });
-    var Row = React.createClass({
-      componentDidMount:function(){
-        var body = this.props.body;
-        if(body.rowHeight ==0){
-          var node = ReactDOM.findDOMNode(this);
-          var height = $(node).height();
-          body.updateRowHeight(height);
-        }
-      },
-      render: function () {
-        var entityCtx = this.props.entityContext;
-        var gridinfo = this.props.info;
-        var bean = this.props.bean;
-        var cells = TGridCell.makeCells(entityCtx, gridinfo, bean);
-        return (<tr className="data-row">
-          {cells}
-        </tr>);
-      }
-    });
-    var PaddingRow = React.createClass({
-      render: function () {
-        var range = this.props.range;
-        var padRows = range.width();
-        return (<tr className="padding-row" data-row-count={padRows}></tr>);
-      }
-    });
-    var NoRecordRow = React.createClass({
-      render: function () {
-        var text = entitytext["NO_RECORDS_FOUND"];
-        var span = this.props.colspan;
-        var hasRec = this.props.hasRecord;
-        var style = {"display" : hasRec ? "none" : ""};
-        return (<tr className="empty-mark">
-          <td className="entity-grid-no-results" colSpan={span} style={style}>{text}</td>
-        </tr>);
-      }
-    });
+
     var Spinner = React.createClass({
       render: function () {
         return (<span className="spinner">

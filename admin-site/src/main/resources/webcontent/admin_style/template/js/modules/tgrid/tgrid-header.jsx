@@ -1,5 +1,7 @@
-define(["jquery", "underscore", "i18n!nls/entitytext"],
-  function ($, _, entitytext) {
+define(["jquery", "underscore",
+    "i18n!nls/entitytext",
+    'url-utility'],
+  function ($, _, entitytext, UrlUtil) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -85,6 +87,30 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
     };
 
     var FilterHolder = React.createClass({
+      statics : {
+        makeFilter: function (fieldinfo, gridinfo, grid) {
+          var fi = fieldinfo;
+          var fieldName = fi.name;
+          var filterType = Filters.getComponentType(fi.fieldType);
+
+          var refName = grid.props.namespace + fieldName;
+
+          return (<FilterHolder ref={refName} refName={refName} key={fieldName} fieldinfo={fieldinfo}
+                                filterType={filterType} grid={grid}>
+          </FilterHolder>);
+        }
+      },
+      getInitialState :function() {
+        var filterKey = this.getFilterKey();
+        var sorterKey = this.getSorterKey();
+        return {
+          isOpen: false,
+          filterVal:"",
+          sorterVal:Orders.DEFAULT,
+          filterKey:filterKey,
+          sorterKey:sorterKey
+        };
+      },
       clickDocument: function(e) {
         if (ReactDOM.findDOMNode(this).contains(e.target)) {// Inside of the component.
         } else {
@@ -93,6 +119,8 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
         }
       },
       fireFilter : function(){
+        if(this.state.isOpen)
+          this.setState({isOpen : false});
         var grid = this.props.grid;
         grid.doLoadByUi();
       },
@@ -115,7 +143,7 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
           //close
           var filter = this.refs.filter;
           var param = filter.getParam();
-          this.setState({filterVal : param});
+          this.setState({filterVal : param}, this.fireFilter);
         }
       },
       handleFilterIconClick :function (){
@@ -123,7 +151,9 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
       },
       handleSortIconClick :function (){
         var nextSortVal = Orders.calcNextOrder(this.state.sorterVal);
-        this.setState({sorterVal : nextSortVal});
+        var header = this.props.grid.refs.header;
+        header.unsetSorterExcept(this.props.refName);
+        this.setState({sorterVal : nextSortVal}, this.fireFilter);
       },
       getFilterKey:function(){
         var fi = this.props.fieldinfo;
@@ -133,42 +163,38 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
         var fi = this.props.fieldinfo;
         return "sort_"+fi.name;
       },
-      getInitialState :function() {
-        var filterKey = this.getFilterKey();
-        var sorterKey = this.getSorterKey();
-        return {
-          isOpen: false,
-          filterVal:"",
-          sorterVal:Orders.DEFAULT,
-          filterKey:filterKey,
-          sorterKey:sorterKey
-        };
-      },
       render  :function(){
         var fi = this.props.fieldinfo;
         var grid = this.props.grid;
-        var gridnamespace = grid.props.namespace;
+        var gns = grid.props.namespace;
         var FilterType = this.props.filterType;
+
         var sortIcon = "";
-        var sortActive = Orders.active(this.state.sorterVal);
-        var sortActiveCn = sortActive? "sort-active" : "";
         if(fi.supportSort){
+          var sortActive = Orders.active(this.state.sorterVal);
+          var sortActiveCn = sortActive? "sort-active" : "";
           var sortFa = Orders.fa(this.state.sorterVal);
           sortIcon = <i ref="sortIcon"
                 onClick={this.handleSortIconClick}
                 className={"sort-icon fa fa-sort " + sortFa}></i>;
         }
-        var filterIcon = fi.supportFilter ? (<i ref="filterIcon" onClick={this.handleFilterIconClick} className="filter-icon fa fa-filter"></i>) : "";
+        var filterIcon = '';
+        if(fi.supportFilter){
+          var filterActiveCn = (!!this.state.filterVal)? "filter-active" : "";
+          filterIcon = <i ref="filterIcon"
+                          onClick={this.handleFilterIconClick}
+                          className="filter-icon fa fa-filter"></i>;
+        }
 
         return (<th ref="holder" className="column explicit-size" scope="col">
           <div href="#" className="column-header dropdown" data-column-key="name">
             <div className="title">
               <span className="col-name">{fi.friendlyName}</span>
-              <div className={"filter-sort-container " + sortActiveCn}>
+              <div className={"filter-sort-container " + sortActiveCn + " " + filterActiveCn}>
                 {sortIcon}
                 {filterIcon}
                 <ul ref="filterBox" style={{"display":this.state.isOpen ? "block" : "none"}} className="entity-filter no-hover">
-                  <FilterType ref="filter" fieldinfo={fi}  gridnamespace={gridnamespace}/>
+                  <FilterType ref="filter" fieldinfo={fi}  gridnamespace={gns}/>
                 </ul>
               </div>
             </div>
@@ -178,11 +204,129 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
       }
     });
 
+    var FilterGroup = React.createClass({
+      getInitialState: function () {
+        return {};
+      },
+      render : function(){
+        return (<tr>{this.props.children}</tr>);
+      }
+    });
+
+    var Header = React.createClass({
+      getDefaultProps : function(){
+        return {
+          info : undefined,
+          gridnamespace : ''
+        };
+      },
+      getInitialState: function () {
+        return {
+          cparameter:"",
+          sorter : ''};
+      },
+      componentDidUpdate:function(prevProps, prevState){
+        if((prevState.cparameter) != (this.state.cparameter)){
+          var cparam = this.state.cparameter;
+          var paramObj = UrlUtil.ParamsUtils.stringToData(cparam);
+          var fhs = this.getAllFilterHolder();
+          _.each(fhs, function(fh){
+            var fi = fh.props.fieldinfo;
+            var filter = fh.refs.filter;
+            if(fi.supportFilter){
+              var filterKey = fh.state.filterKey;
+              var filterVal = paramObj[filterKey];
+              filter.setParamByValueArray(filterVal);
+              filterVal = filter.getParam();
+              fh.setState({filterVal :filterVal});
+            }
+            if(fi.supportSort){
+              var sorterKey = fh.state.sorterKey;
+              var sorterVal = paramObj[sorterKey];
+              if(_.isArray(sorterVal) && sorterVal.length == 1){
+                sorterVal = sorterVal[0];
+              }else{
+                sorterVal = Orders.DEFAULT;
+              }
+
+              fh.setState({sorterVal :sorterVal});
+            }
+          });
+//          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
+        }
+      },
+      render: function () {
+        var gridinfo = this.props.info;
+        var grid = this.props.grid;
+        var colsNames =[];
+        var cols = _.map(gridinfo.fields, function (fi) {
+          var col = FilterHolder.makeFilter(fi, gridinfo, grid);
+          colsNames.push(col.ref);
+          return col;
+        });
+        this.ColumnsNames = colsNames;
+        return (
+          <div className="header">
+            <table className="table header-table table-condensed table-hover">
+              <thead>
+              <FilterGroup ref="colsGroup">
+                {cols}
+              </FilterGroup>
+              </thead>
+            </table>
+          </div>);
+      },
+      getAllFilterHolder : function(){
+        var _this = this;
+        var colsNames = this.ColumnsNames;
+        var fhs = _.map(colsNames, function(cn){
+          var fh = _this.refs[cn];
+          return fh;
+        });
+        return fhs;
+      },
+      unsetSorterExcept : function(refName){
+        var fhs = this.getAllFilterHolder();
+        _.each(fhs, function(fh){
+          var rn = fh.props.refName;
+          if(refName != rn){
+            fh.setState({sorterVal:''});
+          }
+        });
+      }
+    });
+
     var Filters = (function(){
       class BaseFilter extends React.Component {
         constructor(){
           super();
           this.multiValue = false;
+        }
+        setParamByValueArray(val) {
+          var finalVal = '';
+          val = val || [];
+          if (_.isArray(val)) {
+            var multi = this.multiValue;
+            if(multi){
+              finalVal = JSON.stringify(val);
+            }else {
+              switch (val.length) {
+                case 0:
+                  finalVal = '';
+                  break;
+                case 1:
+                  finalVal = val[0];
+                  break;
+                default :
+                  throw new Error("Unexpected array")
+              }
+            }
+          } else if (_.isString(val)) {
+            finalVal = val;
+          } else{
+            throw new Error("Unexpected type")
+          }
+          return this.setParam(finalVal);
         }
         setParam (val){}
         getParam (){}
@@ -369,17 +513,9 @@ define(["jquery", "underscore", "i18n!nls/entitytext"],
       }
     })();
 
-    function makeFilter(fieldinfo, gridinfo, grid){
-      var fi = fieldinfo;
-      var fieldName = fi.name;
-
-      var filterType = Filters.getComponentType(fi.fieldType);
-
-      return (<FilterHolder ref={grid.props.namespace + fieldName} key={fieldName} fieldinfo={fieldinfo} filterType={filterType} grid={grid}>
-      </FilterHolder>);
-    }
     return {
-      makeFilter : makeFilter
+      Header : Header,
+      Orders : Orders
     };
   }
 );

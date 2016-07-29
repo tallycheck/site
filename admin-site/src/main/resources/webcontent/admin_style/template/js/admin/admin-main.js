@@ -5,6 +5,7 @@ requirejs.config({
   baseUrl: '/js/admin',
   paths: {
 //        "menu": 'jsx!/js/modules/menu',
+    "modules" : "../modules",
     "datamap": '/js/modules/datamap',
     "math": '/js/modules/math',
     "react":"/lib/react/react-with-addons",
@@ -15,7 +16,10 @@ requirejs.config({
     "perfectScrollbarJQuery": "/lib/perfect-scrollbar/js/perfect-scrollbar.jquery",
     "perfectScrollbar": "/lib/perfect-scrollbar/js//perfect-scrollbar",
     "ResizeSensor":"/lib/css-element-queries/ResizeSensor",
-    "UrlTemplate" :"/lib/url/uri-templates"
+    "UrlTemplate" :"/lib/url/uri-templates",
+    "ajax" : "/js/modules/ajax",
+    "url-parser" : "/lib/js-url-2.3.0/url",
+    "url-utility" : "/js/modules/url-utility"
   },
   shim: {
     'underscore': {
@@ -23,6 +27,9 @@ requirejs.config({
     },
     'jquery': {
       exports: '$'
+    },
+    'url-parser' :{
+      exports : 'window.url'
     }
   },
   jsx: {
@@ -31,7 +38,8 @@ requirejs.config({
 });
 
 // Start the main app logic.
-requirejs(['react', 'react-dom', 'jsx!../modules/menu', 'jsx!../modules/tgrid', "datamap"],
+requirejs(['react', 'react-dom',
+    'jsx!modules/menu', 'jsx!modules/tgrid', "datamap"],
   function   (React, ReactDom, menu, tgrid,datamap) {
     var menuData = datamap.data("menu");
     var menuPath = datamap.data("menuPath");
