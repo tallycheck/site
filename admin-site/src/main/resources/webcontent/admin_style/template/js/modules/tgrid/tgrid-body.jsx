@@ -17,6 +17,41 @@ define(["jquery",
     var PaddingRow = TGridRows.PaddingRow;
     var NoRecordRow = TGridRows.NoRecordRow;
 
+    var Spinner = React.createClass({
+      getInitialState: function () {
+        return {
+          loadingIndex : -1,
+          iconHeight : 0
+        }
+      },
+      componentDidMount:function(){
+        var si = this.refs.spinnerIcon;
+        var node = ReactDOM.findDOMNode(si);
+        this.setState({iconHeight : 10});
+      },
+      render: function () {
+        var loadingIndex = this.state.loadingIndex;
+        var iconHeight = this.state.iconHeight;
+        var rowHeight = this.props.body.rowHeight;
+
+        var visible = (iconHeight > 0) && (
+          loadingIndex >= 0);
+        var visibleStype = {"display" : (visible ? "block" : "none")};
+
+        var offset = (loadingIndex * rowHeight) + ((rowHeight - iconHeight) / 2);
+        var offsetStyle = {"top" : "" + offset + "px"};
+
+        var style = _.extend({}, visibleStype, offsetStyle);
+
+        return (<span className="body-spinner" style={style}>
+          <i ref="spinnerIcon" className="spinner-item fa fa-spin fa-spinner"></i>
+        </span>);
+      },
+      setLoadingIndex:function(index){
+        if(index === null || index === undefined) index = -1;
+        this.setState({loadingIndex : index});
+      }
+    });
     var Body = React.createClass({
       rowHeight: 0,
       updateRowHeight: function (height) {
@@ -128,6 +163,7 @@ define(["jquery",
             {rows}
             </tbody>
           </table>
+          <Spinner ref="spinner" body={this}/>
         </div>);
       }
     });

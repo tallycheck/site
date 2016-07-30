@@ -137,6 +137,9 @@ define(["jquery", "underscore","datamap","math",
         var maxBodyHeight = height - headerGroup.height() - footerGroup.height();
         body.css('max-height', ''+maxBodyHeight+'px');
       },
+      getSpinner(){
+        return this.refs.body.refs.spinner;
+      },
       doResize:function(){
         //var _this = this;
         //var node = ReactDOM.findDOMNode(_this);
@@ -210,7 +213,6 @@ define(["jquery", "underscore","datamap","math",
                     entities={this.state}
                     onScroll ={this.onScroll}
                     visibleRangeUpdate={this.onVisibleRangeUpdate}/>
-              <Spinner ref="spinner" />
             </div>
             <div ref="footerGroup">
               <Footer ref="footer"/>
@@ -265,10 +267,25 @@ define(["jquery", "underscore","datamap","math",
         });
       },
       doLoadPending : function () {
-        var url = this.dataAccess().buildInScreenLoadUrl();
+        var da = this.dataAccess();
+        var pendingRange = da.screenPendingRange();
+        var pendingUrl = (pendingRange) ? da.buildLoadUrl(pendingRange) : null;
+        var url = {
+          value : pendingUrl,
+          range : pendingRange
+        };
         this.ajaxLoadData(url, false);
       },
       ajaxLoadData : function(url, fresh){
+        if(_.isObject(url)) {
+          var purl = url;
+          url = purl.value;
+          var range = purl.range;
+          if (range) {
+            var loadAlign = range.fromEnd ? (range.hi - 1) : range.lo;
+            this.getSpinner().setLoadingIndex(loadAlign);
+          }
+        }
         if(url == null) return;
         var _grid = this;
         var ffresh = (fresh === undefined) ? true : !!(fresh);
@@ -305,6 +322,7 @@ define(["jquery", "underscore","datamap","math",
           },
           complete:function(jqXHR, textStatus){
             _grid.releaseLock();
+            _grid.getSpinner().setLoadingIndex(null);
           }
         };
         var optionsclone = $.extend({}, options);

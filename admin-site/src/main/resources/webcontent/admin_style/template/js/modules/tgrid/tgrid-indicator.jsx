@@ -6,13 +6,6 @@ define(["jquery",
             entitytext) {
     var React = require('react');
 
-    var Spinner = React.createClass({
-      render: function () {
-        return (<span className="spinner">
-          <i className="spinner-item fa fa-spin fa-spinner"></i>
-        </span>);
-      }
-    });
     var Footer = React.createClass({
       getDefaultProps:function(){
         return {range : new Range(0,0), total : 0};
@@ -36,7 +29,6 @@ define(["jquery",
     });
 
     return {
-      Spinner : Spinner,
       Footer : Footer
     }
   });
