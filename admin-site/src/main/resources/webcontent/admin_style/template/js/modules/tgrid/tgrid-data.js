@@ -152,17 +152,19 @@ define(["jquery",
       },
       buildInScreenLoadUrl : function(){
         var fullRange = this.getFullIndexRange();
-        var screenRange = fullRange.intersect(this.getVisibleRange());
-        var loadedRanges = this.getLoadedRanges();
-        var pageSize = this.getPageSize();
+        var visibleRange = this.getVisibleRange();
 
-        if(screenRange.width() < 1){
+        var visibleMissingRange = fullRange.intersect(visibleRange);
+
+        if(visibleMissingRange == null || visibleMissingRange.width() < 1){
           return null;
         }
-        var missingRanges = loadedRanges.findMissingRangesWithin(screenRange);
+        var loadedRanges = this.getLoadedRanges();
+        var pageSize = this.getPageSize();
+        var missingRanges = loadedRanges.findMissingRangesWithin(visibleMissingRange);
         var missing0 = missingRanges.first();
         if(missing0){
-          missing0 = missing0.subRange(pageSize, (missing0.lo == screenRange.lo));
+          missing0 = missing0.subRange(pageSize, (missing0.lo == visibleMissingRange.lo));
           var toLoadRange = fullRange.intersect(missing0);
           return this.buildLoadUrl(toLoadRange);
         }else{

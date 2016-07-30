@@ -1,27 +1,31 @@
 define(["jquery", "underscore","datamap","math",
-    "perfectScrollbar",
     './tgrid/tgrid-data',
-    'jsx!./tgrid/tgrid-header',
-    'jsx!./tgrid/tgrid-rows',
     'jsx!./tgrid/tgrid-toolbar',
+    'jsx!./tgrid/tgrid-header',
+    'jsx!./tgrid/tgrid-body',
+    'jsx!./tgrid/tgrid-indicator',
     "i18n!nls/entitytext",
-    "ResizeSensor", "ajax"],
+    "ResizeSensor", "ajax","jquery.dotimeout"],
   function ($, _, dm, math,
-            Ps,
             TGridDA,
+            TGridToolbar,
             TGridHeader,
-            TGridRow, TGridToolbar,
-            entitytext, ResizeSensor, ajax) {
+            TGridBody, TGridIndicator,
+            entitytext, ResizeSensor, ajax, doTimeout) {
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Range = math.Range;
     var Ranges = math.Ranges;
-    var Row = TGridRow.Row;
-    var PaddingRow = TGridRow.PaddingRow;
-    var NoRecordRow = TGridRow.NoRecordRow;
+    var Body = TGridBody.Body;
     var Toolbar = TGridToolbar.Toolbar;
     var GridDataAccess = TGridDA.GridDataAccess;
     var Header = TGridHeader.Header;
+    var Footer = TGridIndicator.Footer;
+    var Spinner = TGridIndicator.Spinner;
+
+    var fetchDebounce = 200;
+    var lockDebounce = 200;
+    var updateUrlDebounce = 800;
 
     var LoadEvent = function(source){
       this.source = LoadEvent.Source.UnifiedSource(source);
@@ -55,7 +59,7 @@ define(["jquery", "underscore","datamap","math",
           fresh = !!(fresh);
           var origState = grid.state;
           var ranges = fresh ? new Ranges() : origState.recordRanges;
-          var beansMap = fresh ? new Object() : origState.beansMap;
+          var beansMap = fresh ? new Object() : _.extend({}, origState.beansMap);
 
           var entities = queryResult.entities;
           var beans = entities.beans;
@@ -84,6 +88,17 @@ define(["jquery", "underscore","datamap","math",
           grid.setState(newState);
         },
         LoadSource: {UI: "ui", URL: "url", PARAMETER: 'parameter', NONE: 'none'}
+      },
+      AJAX_LOCK : 0,
+      acquireLock: function () {
+        if (this.AJAX_LOCK == 0) {
+          this.AJAX_LOCK = 1;
+          return true;
+        }
+        return false;
+      },
+      releaseLock: function () {
+        this.AJAX_LOCK = 0;
       },
       maxHeight:0,
       //Grid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> Grid.stateUpdate
@@ -142,6 +157,7 @@ define(["jquery", "underscore","datamap","math",
           total: totalRecords
         };
         footer.setState(obj);
+        this.triggerLoadPending();
       },
       componentDidMount:function(){
         var node = ReactDOM.findDOMNode(this);
@@ -189,7 +205,11 @@ define(["jquery", "underscore","datamap","math",
               <Header ref="header" info={entityContext.info} gridnamespace={this.props.namespace} grid={this}/>
             </div>
             <div ref="bodyGroup" >
-              <Body ref="body" entityContext={entityContext} info={entityContext.info} entities={this.state} visibleRangeUpdate={this.onVisibleRangeUpdate}/>
+              <Body ref="body" entityContext={entityContext}
+                    info={entityContext.info}
+                    entities={this.state}
+                    onScroll ={this.onScroll}
+                    visibleRangeUpdate={this.onVisibleRangeUpdate}/>
               <Spinner ref="spinner" />
             </div>
             <div ref="footerGroup">
@@ -197,6 +217,9 @@ define(["jquery", "underscore","datamap","math",
             </div>
           </div>
           );
+      },
+      onScroll:function(){
+
       },
       onCriteriaParameterUpdate : function(prevCparam, nextCparam){
         if(nextCparam == prevCparam)
@@ -227,176 +250,67 @@ define(["jquery", "underscore","datamap","math",
         }
       },
       doLoadByUrl : function (url, fresh) {
-        var _grid = this;
-        var handlers = {
-          ondata: function (/*ondata*/ response) {
-            var queryResult = response.data;
-//            var queryResponse = dm.queryResponse(response.data);
-            Grid.updateStateBy(_grid, queryResult, true);
-          }
-        };
-        console.log("will load url: " + url);
-        ajax.get({
-          url:url,
-          success:function (response) {
-            if (handlers.ondata) {
-              handlers.ondata(response);
-            }
-          },
-          complete:function(jqXHR, textStatus){
-          }
-
-        });
+        this.ajaxLoadData(url, fresh);
       },
       doLoadByFilters : function(){
         var cparam = this.dataAccess().gatherCriteriaParameter();
         this.setState({'cparameter' : cparam});
         var url = this.dataAccess().buildLoadUrl();
         this.doLoadByUrl(url, true);
-      }
-    });
-
-    var Body = React.createClass({
-      rowHeight : 0,
-      updateRowHeight:function(height){
-        if(this.rowHeight == 0){
-          this.rowHeight = height;
-        }
       },
-      getDefaultProps: function () {
-        return {
-          visibleRangeUpdate : function(){
-            var _this = this;
-            var topIndex = _this.visibleTopIndex();
-            var bottomIndex = _this.visibleBottomIndex();
+      triggerLoadPending:function(){
+        var _this = this;
+        doTimeout("loadpending", fetchDebounce, function(){
+          _this.doLoadPending();
+        });
+      },
+      doLoadPending : function () {
+        var url = this.dataAccess().buildInScreenLoadUrl();
+        this.ajaxLoadData(url, false);
+      },
+      ajaxLoadData : function(url, fresh){
+        if(url == null) return;
+        var _grid = this;
+        var ffresh = (fresh === undefined) ? true : !!(fresh);
+        var _args = arguments;
 
-            console.log("[" + topIndex + " " + bottomIndex + "]");
+        while (!_grid.acquireLock()) {
+          //console.log("Couldn't acquire lock. Will try again in " + lockDebounce + "ms");
+          doTimeout('acquirelock', lockDebounce, function () {
+            var callee = _grid.ajaxLoadData;
+            callee.apply(_grid, _args);
+          });
+          return false;
+        }
+
+        var handlers = {
+          ondata: function (/*ondata*/ response) {
+            var queryResult = response.data;
+//            var queryResponse = dm.queryResponse(response.data);
+            Grid.updateStateBy(_grid, queryResult, ffresh);
+          },
+          ondataloaded : function(){
+            _grid.triggerLoadPending();
           }
         };
-      },
-      onScroll:function(e){
-        var _this = e.data;
-        var updater = _this.props.visibleRangeUpdate;
-        updater.call(_this);
-      },
-      visibleRange:function(){
-        return new Range(this.visibleTopIndex(), this.visibleBottomIndex());
-      },
-      visibleTopIndex : function(){
-        return Math.floor(this.visibleTopFloatIndex());
-      },
-      visibleBottomIndex : function(){
-        return Math.ceil(this.visibleBottomFloatIndex());
-      },
-      visibleTopFloatIndex : function(){
-        if(this.rowHeight == 0)
-          return 0;
-        var node = ReactDOM.findDOMNode(this);
-        var $node = $(node).find('.ps-scrollbar-y-rail');
-        var offset = $node[0].offsetTop;
-        return offset / this.rowHeight;
-      },
-      visibleBottomFloatIndex : function(){
-        if(this.rowHeight == 0)
-          return 0;
-        var node = ReactDOM.findDOMNode(this);
-        var $node = $(node);
-        var $scrollbar = $(node).find('.ps-scrollbar-y-rail');
-        var offset = $scrollbar[0].offsetTop;
-        offset = offset + $node.height();
-        return offset / this.rowHeight;
-      },
-      componentDidMount:function(){
-        var node = ReactDOM.findDOMNode(this);
-        var $node = $(node);
-        Ps.initialize(node);
-        $node.on('ps-scroll-y', this, this.onScroll);
-      },
-      componentDidUpdate:function(){
-        this.updatePaddingRowHeight();
-      },
-      updatePaddingRowHeight:function(){
-        var node = ReactDOM.findDOMNode(this);
-        var $paddingRows = $(node).find("tr.padding-row");
-        var rowHeight = this.rowHeight;
-        $paddingRows.each(function (idx, item) {
-          var $row = $(item);
-          var rowCount = $row.data("row-count");
-          var height = rowHeight * rowCount;
-          $row.height(height);
-        });
-      },
-      render: function () {
-        var gridinfo = this.props.info;
-        var entities = this.props.entities;
-        var entityContext = this.props.entityContext;
-        var cols = _.map(gridinfo.fields, function (fi) {
-          return (<th key={fi.name} className="column explicit-size"
-                      scope="col" ></th>);
-        });
-        var colspan = cols.length;
-        var beanSegs = entities.recordRanges.makeSegements(new Range(0, entities.totalRecords));
-        var theBody = this;
-        var hasRecord = entities.totalRecords > 0;
-        var rows = [];
-        _.each(beanSegs, function(seg){
-          var range = seg.r;
-          var cover = seg.cover;
-          if(!cover){
-            rows.push(<PaddingRow key={range.toString()} range={range}/>);
-          }else{
-            range.each(function (i) {
-              var bean = entities.beansMap[i];
-              var row = <Row key={i} entityContext={entityContext} info={gridinfo}
-                             bean={bean} beanIndex={i} body={theBody}/>;
-              rows.push(row);
-            })
+        var options = {
+          url:url,
+          success:function (response) {
+            if (handlers.ondata) {
+              handlers.ondata(response);
+            }
+            if(handlers.ondataloaded){
+              handlers.ondataloaded();
+            }
+          },
+          complete:function(jqXHR, textStatus){
+            _grid.releaseLock();
           }
-        });
+        };
+        var optionsclone = $.extend({}, options);
 
-        return (<div className="body" ref="scrollContainer">
-          <table className="table body-table table-condensed table-hover">
-            <thead>
-            <tr data-col-visible="0,1,1,1,1,1,1"
-                data-col-percents="0,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666">
-              {cols}
-            </tr>
-            </thead>
-            <tbody className="real-data">
-            <NoRecordRow hasRecord={hasRecord} colspan={colspan}/>
-            {rows}
-            </tbody>
-          </table>
-        </div>);
-      }
-    });
-
-    var Spinner = React.createClass({
-      render: function () {
-        return (<span className="spinner">
-          <i className="spinner-item fa fa-spin fa-spinner"></i>
-        </span>);
-      }
-    });
-    var Footer = React.createClass({
-      getDefaultProps:function(){
-        return {range : new Range(0,0), total : 0};
-      },
-      getInitialState:function(){
-        var _this = this;
-        return {range : _this.props.range, total : _this.props.total};
-      },
-      render: function () {
-        var text = entitytext["GRID_DATA_RANGE"](this.state.range, this.state.total);
-        return (<div className="footer">
-          <div>
-            <span>
-              <span className="screen-range-of-results">
-              {text}
-              </span>
-            </span>
-          </div>
-        </div>);
+        console.log("will load url: " + url);
+        ajax.get(options);
       }
     });
 

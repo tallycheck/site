@@ -12,6 +12,7 @@ requirejs.config({
     "react-dom":"/lib/react/react-dom",
     "JSXTransformer": "JSXTransformer",
     "jquery": "/lib/jquery/jquery-2.1.4.min",
+    "jquery.dotimeout":"/lib/jquery/plugins/jquery.ba-dotimeout",
     "underscore" : "/lib/underscore/underscore-min",
     "perfectScrollbarJQuery": "/lib/perfect-scrollbar/js/perfect-scrollbar.jquery",
     "perfectScrollbar": "/lib/perfect-scrollbar/js//perfect-scrollbar",
@@ -27,6 +28,10 @@ requirejs.config({
     },
     'jquery': {
       exports: '$'
+    },
+    'jquery.dotimeout':{
+      deps: ['jquery'],
+      exports: 'jQuery.doTimeout'
     },
     'url-parser' :{
       exports : 'window.url'

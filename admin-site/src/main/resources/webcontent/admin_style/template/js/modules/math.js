@@ -138,7 +138,11 @@ define(["underscore"], function(_){
     addRange: function (ranges, range, merge) {
       ranges.push(range);
       ranges.sort(Range.compare);
-      if(!!merge){this.merge(ranges);}
+      if(!!merge){
+        return this.merge(ranges);
+      }else{
+        return ranges;
+      }
     },
     containsIndex: function (ranges, index) {
       return ranges.some(function (item) {
@@ -221,7 +225,7 @@ define(["underscore"], function(_){
   }
   Ranges.prototype = {
     add : function(range){
-      RangeArrayHelper.addRange(this.ranges, range, true);
+      this.ranges = RangeArrayHelper.addRange(this.ranges, range, true);
     },
     containsIndex : function (i){
       return RangeArrayHelper.containsIndex(this.ranges, i);

@@ -1,4 +1,5 @@
-define(["jquery", "underscore",
+define(["jquery",
+    "underscore",
     "i18n!nls/entitytext",
     'url-utility'],
   function ($, _, entitytext, UrlUtil) {

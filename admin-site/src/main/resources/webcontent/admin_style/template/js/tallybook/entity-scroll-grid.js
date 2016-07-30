@@ -37,7 +37,7 @@ var tallybook = tallybook || {};
         onCustomScroll: function (event, scrollData) {
           host.debug.log(ENABLE_SCROLL_DEBUG, "scroll to : " + scrollData.direction + ' ' + scrollData.scrollPercent);
           _this.updateRangeInfo(scrollData.scrollPercent / 100);
-          _this.triggerLoad();
+          _this.triggerLoadPending();
         }
       });
       this.scrollHolder = bodyWrapper;
@@ -111,11 +111,11 @@ var tallybook = tallybook || {};
       this.scrollHolder.customScrollbar("resize", true);
       this.alignHeaderAndBody();
       this.updateRangeInfo();
-      this.triggerLoad();
+      this.triggerLoadPending();
     }},
     setup:{value: function () {
       if (!this.initialized()) {
-        this.triggerLoad();
+        this.triggerLoadPending();
         this.initialized(true);
       }
     }},
@@ -171,10 +171,10 @@ var tallybook = tallybook || {};
         })
       }
     }},
-    triggerLoad :{value: function () {
+    triggerLoadPending :{value: function () {
       var _this = this;
       $.doTimeout('fetch', fetchDebounce, function () {
-        _this.paging.loadRecords();
+        _this.paging.loadPendingRecords();
       });
     }},
     fill :{value: function (ops) {
@@ -231,7 +231,7 @@ var tallybook = tallybook || {};
     // ************************* *
     // UI method *
     // ************************* *
-    loadRecords : function () {
+    loadPendingRecords : function () {
       var $paging = this;
       var sgc = this.sgc;
       return sgc.ajaxLoadData({
@@ -291,7 +291,7 @@ var tallybook = tallybook || {};
             sgc.da.totalRecords(queryBeans.totalCount);
           },
           ondataloaded: function (/*ondataloaded*/) {
-            sgc.triggerLoad();
+            sgc.triggerLoadPending();
           }
         }
       );
