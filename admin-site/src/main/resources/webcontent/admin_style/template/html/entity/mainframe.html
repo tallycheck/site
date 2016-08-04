@@ -79,6 +79,11 @@
       <a class="navbar-brand" href="#">Tally Book
       </a>
     </div>
+      <div>
+          <form name="formtemplate" method="post" th:action="null">
+              <input type="submit" class="hidden"/>
+          </form>
+      </div>
     <div class="collapse navbar-collapse" id="tbaNavbar">
       <tb_admin:value tb_admin:admin_employee="adminUser"/>
       <ul class="nav navbar-nav navbar-right">
@@ -157,7 +162,7 @@
           src="../../lib/jquery-ui/jquery-ui.js"></script>
   <script type="text/javascript" th:src="@{/lib/timepicker/jquery-ui-timepicker-addon.js}"
           src="../../lib/timepicker/jquery-ui-timepicker-addon.js"></script>
-  <script type="text/javascript" th:src="@{/lib/jquery/plugins/jquery.ba-dotimeout.min.js}"
+  <script type="text/javascript" th:src="@{/lib/jquery/plugins/jquery.ba-dotimeout.js}"
           src="../../lib/jquery/plugins/jquery.ba-dotimeout.min.js"></script>
   <script type="text/javascript" th:src="@{/lib/jquery/plugins/jquery.custom-scrollbar.js}"
           src="../../lib/jquery/plugins/jquery.custom-scrollbar.js"></script>

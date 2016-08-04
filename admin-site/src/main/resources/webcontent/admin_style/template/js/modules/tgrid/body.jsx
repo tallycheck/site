@@ -3,7 +3,7 @@ define(["jquery",
     "math",
     "i18n!nls/entitytext",
     'url-utility',
-    'jsx!./tgrid-rows',
+    'jsx!./rows',
     "perfectScrollbar"],
   function ($, _, math,
             entitytext, UrlUtil, TGridRows,
@@ -52,6 +52,38 @@ define(["jquery",
         this.setState({loadingIndex : index});
       }
     });
+
+    var InBodyHeader = React.createClass({
+      initialized : false,
+      getDefaultProps:function(){
+        return {};
+      },
+      cloneHeaderColumns : function(){
+        var header = this.props.header;
+        if(header == null)
+          return;
+        var innerHtml = header.calcBodyHeaderRowHtml();
+        var htmlSlot = $(this.refs.slot);
+        htmlSlot.html(innerHtml);
+        this.initialized = true;
+      },
+      componentDidMount() {
+        this.cloneHeaderColumns();
+      },
+      componentDidUpdate:function(prevProps, prevState){
+        if(!_.isEqual(prevProps.gridinfo, this.props.gridinfo)) {
+          this.cloneHeaderColumns();
+        }
+        if(!this.initialized){
+          this.cloneHeaderColumns();
+        }
+      },
+      render : function(){
+        return <thead ref='slot'>
+        </thead>
+      }
+    });
+
     var Body = React.createClass({
       rowHeight: 0,
       updateRowHeight: function (height) {
@@ -69,6 +101,11 @@ define(["jquery",
             console.log("[" + topIndex + " " + bottomIndex + "]");
           }
         };
+      },
+      getInitialState: function () {
+        return {
+          selectedIndex : -1
+        }
       },
       onScroll: function (e) {
         var _this = e.data;
@@ -108,7 +145,17 @@ define(["jquery",
         Ps.initialize(node);
         $node.on('ps-scroll-y', this, this.onScroll);
       },
-      componentDidUpdate: function () {
+      componentDidUpdate:function(prevProps, prevState, prevContext, rootNode){
+        if((prevState.selectedIndex) != (this.state.selectedIndex)){
+          var entities = this.props.entities;
+          var oldIndex = prevState.selectedIndex;
+          var newIndex = this.state.selectedIndex;
+
+          var oldBean = (oldIndex >= 0) ? entities.beansMap[oldIndex] : undefined;
+          var newBean = (newIndex >= 0) ? entities.beansMap[newIndex] : undefined;
+          
+          this.props.grid.onSelectedIndexChanged(oldBean, newBean, oldIndex, newIndex);
+        }
         this.updatePaddingRowHeight();
       },
       updatePaddingRowHeight: function () {
@@ -126,15 +173,12 @@ define(["jquery",
         var gridinfo = this.props.info;
         var entities = this.props.entities;
         var entityContext = this.props.entityContext;
-        var cols = _.map(gridinfo.fields, function (fi) {
-          return (<th key={fi.name} className="column explicit-size"
-                      scope="col"></th>);
-        });
-        var colspan = cols.length;
+        var colspan = gridinfo ? gridinfo.fields.length : 1;
         var beanSegs = entities.recordRanges.makeSegements(new Range(0, entities.totalRecords));
         var theBody = this;
         var hasRecord = entities.totalRecords > 0;
         var rows = [];
+        var selectedIndex = this.state.selectedIndex;
         _.each(beanSegs, function (seg) {
           var range = seg.r;
           var cover = seg.cover;
@@ -143,21 +187,17 @@ define(["jquery",
           } else {
             range.each(function (i) {
               var bean = entities.beansMap[i];
-              var row = <Row key={i} entityContext={entityContext} info={gridinfo}
+              var row = <Row key={i} selected={selectedIndex == i} entityContext={entityContext} info={gridinfo}
                              bean={bean} beanIndex={i} body={theBody}/>;
               rows.push(row);
             })
           }
         });
+        var header = this.props.grid.refs.header;
 
         return (<div className="body" ref="scrollContainer">
-          <table className="table body-table table-condensed table-hover">
-            <thead>
-            <tr data-col-visible="0,1,1,1,1,1,1"
-                data-col-percents="0,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666,0.16666666666666666">
-              {cols}
-            </tr>
-            </thead>
+          <table className="table body-table table-condensed table-hover" onClick={this.onTableClick}>
+            <InBodyHeader ref="inbodyHeader" gridinfo={gridinfo} header={header}/>
             <tbody className="real-data">
             <NoRecordRow hasRecord={hasRecord} colspan={colspan}/>
             {rows}
@@ -165,6 +205,40 @@ define(["jquery",
           </table>
           <Spinner ref="spinner" body={this}/>
         </div>);
+      },
+      selectedBean : function(){
+        var selectedIdx = this.state.selectedIndex;
+        var beansMap = this.props.entities.beansMap;
+        if(selectedIdx < 0) return null;
+        return beansMap[selectedIdx];
+      },
+      selectIndex : function(index){
+        if(index < 0)
+          this.setState({selectedIndex : -1});
+
+        var beansMap = this.props.entities.beansMap;
+        var bean = beansMap[index];
+        if(bean){
+          this.setState({selectedIndex : index});
+        }
+      },
+      onTableClick:function(e){
+        var body = this;
+        var $el = $(e.target),
+          $row = $el.closest('tr.data-row'),
+          newIndex = -1;
+        if ($row.length == 0) {
+          newIndex = -1;
+        }else{
+          newIndex = $row.attr('data-row-index');
+        }
+        var oldIndex = body.state.selectedIndex;
+        if(newIndex == oldIndex)
+          newIndex = -1;
+        this.selectIndex(newIndex);
+      },
+      syncHeaderColumns(){
+        this.refs.inbodyHeader.cloneHeaderColumns();
       }
     });
 

@@ -36,7 +36,7 @@ define(["jquery",
         return this.grid.state.pageSize;
       },
       getQueryUri:function(){
-        return this.grid.props.queryUri;
+        return this.grid.state.queryUri;
       },
       splitParameter : function(paramStr){
         var pu = UrlUtil.ParamsUtils;

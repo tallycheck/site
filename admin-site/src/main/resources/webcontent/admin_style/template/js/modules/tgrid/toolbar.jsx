@@ -13,17 +13,22 @@ define(["jquery", "underscore","../datamap","math",
     };
 
     var Toolbar = React.createClass({
+      getDefaultProps: function () {
+        return {
+          csrf : ''
+        };
+      },
       render: function () {
         var gridInfo = this.props.info;
         return (
           <div className="toolbar row">
             <Search gridInfo={gridInfo} actions={this.props.actions} links={this.props.links}/>
-            <Actions actions={this.props.actions} links={this.props.links}/>
-            <form method="POST" className="post-agent" action="">
-              <input type="hidden" name="_csrf" value="f9f562de-5b37-43ce-986e-8614b9737c75"/>
-            </form>
+            <Actions ref="actions" grid={this.props.grid} actions={this.props.actions} links={this.props.links}/>
           </div>
         );
+      },
+      focuseToId : function(id){
+        this.refs.actions.setState({focusingEntry: id});
       }
     });
     var Search = React.createClass({
@@ -45,7 +50,7 @@ define(["jquery", "underscore","../datamap","math",
       },
       render: function () {
         var gridinfo = this.props.gridInfo;
-        if (gridinfo.primarySearchField) {
+        if (gridinfo && gridinfo.primarySearchField) {
           var searchFieldName = gridinfo.primarySearchField;
           var searchField = _.find(gridinfo.fields, function (f) {
             return f.name == searchFieldName
@@ -77,6 +82,9 @@ define(["jquery", "underscore","../datamap","math",
       }
     });
     var Actions = React.createClass({
+      getInitialState :function() {
+        return {focusingEntry : ''};
+      },
       actionObj : function(actionName){
         var links=this.props.links;
         var actionUri = links[actionName];
@@ -101,48 +109,55 @@ define(["jquery", "underscore","../datamap","math",
         return btn;
       },
       render: function () {
-        var actions=this.props.actions,
+        var grid = this.props.grid,
+          actions=this.props.actions,
           links=this.props.links,
           btns = [];
 
-        if(actions.includes(GAS.CREATE_ACTION)){
-          var actionName = GAS.CREATE_ACTION;
-          var ao = this.actionObj(actionName);
-          var actionUri = ao.uri;
-          var actionText = ao.text;
-          var btn = (
-            <button type="button" key={actionName} className="btn btn-default action-control" data-action={actionName}
-                    data-edit-in-modal="true" data-edit-success-redirect="false"
-                    data-action-uri={actionUri}>
-              <span className="fa fa-plus" aria-hidden="true"></span> {actionText}
-            </button>);
-          btns.push(btn);
-        }
-        if(actions.includes(GAS.UPDATE_ACTION)){
-          var actionName = GAS.UPDATE_ACTION;
-          var ao = this.actionObj(actionName);
-          var actionUri = ao.uri;
-          var actionText = ao.text;
-          var btn = (
-            <button type="button" key={actionName} className="btn btn-default action-control entity-action" data-action={actionName}
-                    data-edit-in-modal="true"
-                    data-action-url="" data-edit-success-redirect="false" disabled="disabled"
-                    data-action-uri={actionUri}>
-              <span className="fa fa-pencil-square-o" aria-hidden="true"></span> {actionText}
-            </button>);
-          btns.push(btn);
-        }
-        if(actions.includes(GAS.DELETE_ACTION)){
-          var actionName = GAS.DELETE_ACTION;
-          var ao = this.actionObj(actionName);
-          var actionUri = ao.uri;
-          var actionText = ao.text;
-          var btn = (
-            <button type="button" key={actionName} className="btn btn-default action-control entity-action" data-action={actionName}
-                    data-action-url="" disabled="disabled"
-                    data-action-uri={actionUri}>
-              <span className="fa fa-times" aria-hidden="true"></span> {actionText}</button>);
-          btns.push(btn);
+        if(actions) {
+          if (actions.includes(GAS.CREATE_ACTION)) {
+            var actionName = GAS.CREATE_ACTION;
+            var ao = this.actionObj(actionName);
+            var actionUri = ao.uri;
+            var actionText = ao.text;
+            var btn = (
+              <button type="button" key={actionName} className="btn btn-default action-control" data-action={actionName}
+                      data-edit-in-modal="true" data-edit-success-redirect="false"
+                      data-action-uri={actionUri} onClick={grid.onEventCreateButtonClick}>
+                <span className="fa fa-plus" aria-hidden="true"></span> {actionText}
+              </button>);
+            btns.push(btn);
+          }
+          if (actions.includes(GAS.UPDATE_ACTION)) {
+            var actionName = GAS.UPDATE_ACTION;
+            var ao = this.actionObj(actionName);
+            var actionUri = ao.uri;
+            var actionText = ao.text;
+            var focusing = (this.state.focusingEntry != '');
+            var btn = (
+              <button type="button" key={actionName} className="btn btn-default action-control entity-action"
+                      data-action={actionName}
+                      data-edit-in-modal="true"
+                      data-action-url="" data-edit-success-redirect="false" disabled={!focusing}
+                      data-action-uri={actionUri} onClick={grid.onEventUpdateButtonClick}>
+                <span className="fa fa-pencil-square-o" aria-hidden="true"></span> {actionText}
+              </button>);
+            btns.push(btn);
+          }
+          if (actions.includes(GAS.DELETE_ACTION)) {
+            var actionName = GAS.DELETE_ACTION;
+            var ao = this.actionObj(actionName);
+            var actionUri = ao.uri;
+            var actionText = ao.text;
+            var focusing = (this.state.focusingEntry != '');
+            var btn = (
+              <button type="button" key={actionName} className="btn btn-default action-control entity-action"
+                      data-action={actionName}
+                      data-action-url="" disabled={!focusing}
+                      data-action-uri={actionUri} onClick={grid.onEventDeleteButtonClick}>
+                <span className="fa fa-times" aria-hidden="true"></span> {actionText}</button>);
+            btns.push(btn);
+          }
         }
 
         return (

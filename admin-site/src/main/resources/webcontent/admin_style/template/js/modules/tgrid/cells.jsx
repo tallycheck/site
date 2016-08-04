@@ -1,8 +1,9 @@
 define(["jquery", "underscore",
-    "datamap","math",
-    "i18n!nls/entitytext"],
-  function ($, _, dm, math,
-            entitytext) {
+    "datamap","messages-dict",
+    "i18n!nls/entitytext", 'jquery-ui', 'jquery-ui-timepicker'],
+  function ($, _,
+            dm, MsgDict,
+            entitytext, jui, juitp) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -59,21 +60,23 @@ define(["jquery", "underscore",
           var fi = this.props.fieldinfo;
           var fieldname = fi.name;
           var fieldvalue = dm.entityProperty(this.props.bean, fieldname);
-          if(!fieldvalue) return '';
+          if(!fieldvalue)
+            return <span></span>;
           var dateVal = new Date(fieldvalue);
           var celldisplaymodel = fi.cellModel;
           var tStr = [];
           if(celldisplaymodel.indexOf('date') >= 0){
-            var format = host.messages.datepicker_format_date;
+            var format = MsgDict.datepicker_format_date;
             var d = $.datepicker.formatDate(format, dateVal, {});
             tStr.push(d);
           }
           if(celldisplaymodel.indexOf('time') >= 0){
-            var format = host.messages.datepicker_format_time;
+            var format = MsgDict.datepicker_format_time;
             var d = $.datepicker.formatTime(format, { hour:dateVal.getHours(), minute:dateVal.getMinutes(), second:dateVal.getSeconds()}, {});
             tStr.push(d);
           }
-          return <span>{tStr.join(' ')}</span>;
+          var content = tStr.join(' ');
+          return <span>{content}</span>;
         }
       }
       class PhoneCell extends CellBase{
@@ -147,6 +150,7 @@ define(["jquery", "underscore",
         "name" : NameCell,
         'enumeration' :EnumCell,
         'boolean' : BoolCell,
+        'date' : DateCell,
         'phone' : PhoneCell,
         'foreign_key' : ForeignKeyCell,
         'external_foreign_key':ExternalForeignKeyCell,
@@ -160,77 +164,5 @@ define(["jquery", "underscore",
       }
     })();
 
-    var createCellContent = function(entityCtx, fieldinfo, bean, fieldvalue) {
-      var props = {
-        entityContext: entityCtx,
-        fieldinfo: fieldinfo,
-        bean: bean,
-        fieldvalue: fieldvalue
-      };
-      var CellType = Cells.getComponentType(fieldinfo.fieldType);
-      return React.createElement(CellType, props);
-    }
-
-    var makeCell = function(entityCtx, fieldinfo, bean){
-      var fieldname = fieldinfo.name;
-      var fieldvalue = dm.entityProperty(bean, fieldname);
-      var content = createCellContent(entityCtx, fieldinfo, bean, fieldvalue);
-
-      var cell = (<td key={fieldname}>{content}</td>);
-      return cell;
-
-    }
-
-    var makeCells = function(entityCtx, gridinfo, bean){
-      var fis = gridinfo.fields;
-      var cells = _.map(fis, function (field, index, array) {
-        var cell = makeCell(entityCtx, field, bean);
-        return cell;
-      });
-      return cells;
-    }
-
-    var Row = React.createClass({
-      componentDidMount:function(){
-        var body = this.props.body;
-        if(body.rowHeight ==0){
-          var node = ReactDOM.findDOMNode(this);
-          var height = $(node).height();
-          body.updateRowHeight(height);
-        }
-      },
-      render: function () {
-        var entityCtx = this.props.entityContext;
-        var gridinfo = this.props.info;
-        var bean = this.props.bean;
-        var cells = makeCells(entityCtx, gridinfo, bean);
-        return (<tr className="data-row">
-          {cells}
-        </tr>);
-      }
-    });
-    var PaddingRow = React.createClass({
-      render: function () {
-        var range = this.props.range;
-        var padRows = range.width();
-        return (<tr className="padding-row" data-row-count={padRows}></tr>);
-      }
-    });
-    var NoRecordRow = React.createClass({
-      render: function () {
-        var text = entitytext["NO_RECORDS_FOUND"];
-        var span = this.props.colspan;
-        var hasRec = this.props.hasRecord;
-        var style = {"display" : hasRec ? "none" : ""};
-        return (<tr className="empty-mark">
-          <td className="entity-grid-no-results" colSpan={span} style={style}>{text}</td>
-        </tr>);
-      }
-    });
-
-    return {
-      Row : Row,
-      PaddingRow : PaddingRow,
-      NoRecordRow : NoRecordRow
-    }
+    return Cells;
   });
