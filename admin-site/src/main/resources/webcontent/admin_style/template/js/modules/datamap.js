@@ -155,6 +155,9 @@ define(["jquery",
       info:{value:function(){return this.formInfo();}},
       entity :{value:function(){return this._entity;}}
     });
+    BeanResponse.newInstance = function(data){
+      return new BeanResponse(data);
+    }
 
     return {
       dataMap : getDataMap,
@@ -164,6 +167,7 @@ define(["jquery",
       BeanContext : BeanContext,
       QueryResponse: QueryResponse,
       queryResponse : QueryResponse.newInstance,
-      BeanResponse: BeanResponse
+      BeanResponse: BeanResponse,
+      beanResponse : BeanResponse.newInstance,
     }
   });

@@ -195,7 +195,7 @@ define(["jquery",
         }
         render (){
           var fi = this.props.fieldinfo;
-          var gns = this.props.gridnamespace;
+          var gns = this.props.gridNamespace;
           var ops = _.map(fi.options, function(op, i){
             var opF = fi.optionsFriendly[op];
             return (<label key={op} className="option">
@@ -261,7 +261,7 @@ define(["jquery",
         }
         render (){
           var fi = this.props.fieldinfo;
-          var gns = this.props.gridnamespace;
+          var gns = this.props.gridNamespace;
 
           return (<li className='option-filter boolean-filter'>
             <div className="filter-fields" data-action="">

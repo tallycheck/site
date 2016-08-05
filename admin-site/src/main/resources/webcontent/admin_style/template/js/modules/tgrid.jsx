@@ -60,7 +60,7 @@ define(["jquery", "underscore", "datamap", "math",
       },
     }
 
-    var Grid = React.createClass({
+    var TGrid = React.createClass({
       statics: {
         DefaultMaxHeight: 400,
         updateStateBy: function (grid, queryResult, fresh) {
@@ -118,18 +118,20 @@ define(["jquery", "underscore", "datamap", "math",
         this.AJAX_LOCK = 0;
       },
       maxHeight:0,
-      //Grid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> Grid.stateUpdate
-      avoidReverseRequestByVersion : 1,
+
+      //TGrid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> TGrid.stateUpdate
+      //avoid Inverse data Flow
+      updateVersion : 0,
       getDefaultProps: function () {
         return {
           maxVisibleRows: undefined,
-          namespace : 'gns_' + Math.floor(Math.random() * 10000000000) + '_'
+          namespace : 'gns_' + Math.floor(Math.random() * 1e15) + '_'
         };
       },
       getInitialState: function () {
         var beansMap = new Object();
         var ranges = new Ranges();
-        var csrf = Grid.csrf();
+        var csrf = TGrid.csrf();
         return {
           queryUri : undefined,
           entityContext:undefined,
@@ -142,20 +144,24 @@ define(["jquery", "underscore", "datamap", "math",
           cparameter:"",
           beansMap : beansMap,
           loading : false,
-          csrf : csrf
+          csrf : csrf,
+          version : this.updateVersion
         };
       },
       setMaxHeight:function(height){
-        height = height || Grid.DefaultMaxHeight;
+        height = height || TGrid.DefaultMaxHeight;
         var node = ReactDOM.findDOMNode(this);
         var $node = $(node);
         this.maxHeight = height;
         $node.css('max-height', ''+height+'px');
 
+        this.updateBodyMaxHeight();
+      },
+      updateBodyMaxHeight : function(){
         var headerGroup = $(ReactDOM.findDOMNode(this.refs.headerGroup));
         var body = $(ReactDOM.findDOMNode(this.refs.body));
         var footerGroup = $(ReactDOM.findDOMNode(this.refs.footerGroup));
-        var maxBodyHeight = height - headerGroup.height() - footerGroup.height();
+        var maxBodyHeight = this.maxHeight - headerGroup.height() - footerGroup.height();
         body.css('max-height', ''+maxBodyHeight+'px');
       },
       getSpinner(){
@@ -204,8 +210,12 @@ define(["jquery", "underscore", "datamap", "math",
         ResizeSensor.detach(node, this.doResize);
       },
       shouldComponentUpdate:function(nextProps, nextState, nextContext){
+        var ps = this.state;
+        var ns = nextState;
+        var oldState = _.extend({}, ps, {version:0});
+        var newState = _.extend({}, ns, {version:0});
         if(!_.isEqual(nextProps, this.props) ||
-          !_.isEqual(nextState, this.state) ||
+          !_.isEqual(newState, oldState) ||
           !_.isEqual(nextContext, this.context)){
           return true;
         }
@@ -213,7 +223,8 @@ define(["jquery", "underscore", "datamap", "math",
       },
       componentWillUpdate:function(nextProps, nextState,nextContext, transaction){
         if((this.state.cparameter) != (nextState.cparameter)){
-          this.avoidReverseRequestByVersion ++;
+          this.updateVersion ++;
+          this.setState({version:this.updateVersion});
         }
         console.log("GRID will update");
       },
@@ -223,6 +234,7 @@ define(["jquery", "underscore", "datamap", "math",
           console.log("GRID cparameter changed");
         }
         this.doResize();
+        this.updateBodyMaxHeight();
         this.onVisibleRangeUpdate();
         console.log("GRID did update");
       },
@@ -233,7 +245,7 @@ define(["jquery", "underscore", "datamap", "math",
           <div className="entity-grid-container">
             <div ref="headerGroup">
               <Toolbar ref="toolbar" info={info} grid={this} actions={this.state.actions} links={this.state.links}/>
-              <Header ref="header" info={info} grid={this} gridnamespace={this.props.namespace}/>
+              <Header ref="header" info={info} grid={this} gridNamespace={this.props.namespace}/>
             </div>
             <div ref="bodyGroup" >
               <Body ref="body" entityContext={entityContext}
@@ -259,7 +271,7 @@ define(["jquery", "underscore", "datamap", "math",
 
         header.setState({
           cparameter : nextCparam,
-          version: this.avoidReverseRequestByVersion
+          version: this.updateVersion
         });
       },
       onEventCreateButtonClick : function(e){
@@ -308,7 +320,7 @@ define(["jquery", "underscore", "datamap", "math",
       requestDoFilterByFilters : function (caller) {
         console.log("requestDoFilterByFilters");
         var callerVersion = caller.state.version;
-        if(this.avoidReverseRequestByVersion == callerVersion)
+        if(this.updateVersion == callerVersion)
           return;
         this.doLoadByFilters();
       },
@@ -346,6 +358,7 @@ define(["jquery", "underscore", "datamap", "math",
           value : pendingUrl,
           range : pendingRange
         };
+        console.log("will load pending: " + pendingUrl);
         this.ajaxLoadData(url, false);
       },
       ajaxLoadData : function(url, fresh){
@@ -375,7 +388,7 @@ define(["jquery", "underscore", "datamap", "math",
         var handlers = {
           ondata: function (/*ondata*/ response) {
             var queryResult = response.data;
-            Grid.updateStateBy(_grid, queryResult, ffresh);
+            TGrid.updateStateBy(_grid, queryResult, ffresh);
           },
           ondataloaded : function(){
             _grid.triggerLoadPending();
@@ -398,18 +411,18 @@ define(["jquery", "underscore", "datamap", "math",
         };
         var optionsclone = $.extend({}, options);
 
-        console.log("will load url: " + url);
+        console.log("will load url    : " + url);
         ajax.get(options);
       }
     });
 
     function renderGrid(queryResult, div) {
       var queryResponse = dm.queryResponse(queryResult);
-      var gridEle = <Grid/>;
+      var gridEle = <TGrid/>;
 
       var grid = ReactDOM.render(gridEle, div);
 
-      Grid.updateStateBy(grid, queryResult);
+      TGrid.updateStateBy(grid, queryResult);
     }
 
     return {

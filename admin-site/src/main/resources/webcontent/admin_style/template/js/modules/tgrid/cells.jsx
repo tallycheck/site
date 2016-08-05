@@ -11,6 +11,9 @@ define(["jquery", "underscore",
       class CellBase extends React.Component {
 
       }
+      CellBase.defaultProps = {
+
+      };
 
       class TextCell extends CellBase {
         render(){

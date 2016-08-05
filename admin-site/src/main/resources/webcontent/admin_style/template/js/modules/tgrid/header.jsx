@@ -41,7 +41,7 @@ define(["jquery",
           filterVal: "",
           sorterKey: sorterKey,
           sorterVal: Orders.DEFAULT,
-          version: 0
+          version: 0  //the rendering version
         };
       },
       componentDidMount: function() {
@@ -165,7 +165,7 @@ define(["jquery",
                 {sortIcon}
                 {filterIcon}
                 <ul ref="filterBox" style={{"display":this.state.filterShown ? "block" : "none"}} className="entity-filter no-hover">
-                  <FilterType ref="filter" fieldinfo={fi}  gridnamespace={gns}/>
+                  <FilterType ref="filter" fieldinfo={fi}  gridNamespace={gns}/>
                 </ul>
               </div>
             </div>
@@ -329,13 +329,15 @@ define(["jquery",
       getDefaultProps : function(){
         return {
           info : undefined,
-          gridnamespace : ''
+          gridNamespace : ''
         };
       },
       getInitialState: function () {
         return {
           cparameter:"",
-          sorter : ''};
+          sorter : '',
+          version : 0
+        };
       },
       componentDidMount: function() {
         var fhs = this.getAllFilterHolder();
@@ -370,12 +372,15 @@ define(["jquery",
           _.each(fhs, function(fh){
             var fi = fh.props.fieldinfo;
             var filter = fh.refs.filter;
+            var fhPartialState = {};
+            var stateUpdated = false;
             if(fi.supportFilter){
               var filterKey = fh.state.filterKey;
               var filterVal = paramObj[filterKey];
               filter.setParamByValueArray(filterVal);
               filterVal = filter.getParam();
-              fh.setState({filterVal :filterVal, version:version});
+              stateUpdated = true;
+              fhPartialState.filterVal = filterVal;
             }
             if(fi.supportSort){
               var sorterKey = fh.state.sorterKey;
@@ -385,7 +390,12 @@ define(["jquery",
               }else{
                 sorterVal = Orders.DEFAULT;
               }
-              fh.setState({sorterVal :sorterVal, version:version});
+              stateUpdated = true;
+              fhPartialState.sorterVal = sorterVal;
+            }
+            if(stateUpdated){
+              fhPartialState.version = version;
+              fh.setState(fhPartialState);
             }
           });
         }

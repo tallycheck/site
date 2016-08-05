@@ -33,8 +33,8 @@
         href="../../lib/timepicker/jquery-ui-timepicker-addon.css"/>
   <link rel="stylesheet" type="text/css" th:href="@{/lib/font-awesome-4.3.0/css/font-awesome.min.css}"
         href="../../lib/font-awesome-4.3.0/css/font-awesome.min.css"/>
-  <link rel="stylesheet" type="text/css" th:href="@{/lib/bootstrap-3.3.4/css/bootstrap.css}"
-        href="../../lib/bootstrap-3.3.4/css/bootstrap.css"/>
+  <link rel="stylesheet" type="text/css" th:href="@{/lib/bootstrap-3.3.7/css/bootstrap.css}"
+        href="../../lib/bootstrap-3.3.7/css/bootstrap.css"/>
   <link rel="stylesheet" type="text/css" th:href="@{/lib/perfect-scrollbar/css/perfect-scrollbar.css}"
         href="../../lib/perfect-scrollbar/css/perfect-scrollbar.css"/>
 
@@ -63,8 +63,8 @@
         display: none;
       }
     </style>
-  </head>
   /*/-->
+  </head>
 
   <body>
 
@@ -168,8 +168,8 @@
           src="../../lib/jquery/plugins/jquery.custom-scrollbar.js"></script>
 
   <!-- Libs -->
-  <script type="text/javascript" th:src="@{/lib/bootstrap-3.3.4/js/bootstrap.min.js}"
-          src="../../lib/bootstrap-3.3.4/js/bootstrap.min.js"></script>
+  <script type="text/javascript" th:src="@{/lib/bootstrap-3.3.7/js/bootstrap.js}"
+          src="../../lib/bootstrap-3.3.7/js/bootstrap.js"></script>
   <script type="text/javascript" th:src="@{/lib/foundation/js/foundation/foundation.js}"
           src="../../lib/foundation/js/foundation/foundation.js"></script>
   <script type="text/javascript" th:src="@{/lib/foundation/js/foundation/foundation.accordion.js}"
@@ -214,8 +214,6 @@
 
   <script type="text/javascript" th:src="@{/lib/jquery/jquery-2.1.4.js}"
           src="../../lib/jquery/jquery-2.1.4.min.js"></script>
-  <script th:attr="data-main=@{/js/admin/admin-main.js}"
-          th:src="@{/lib/require.js}" src="../../lib/require.js"></script>
 
   <!-- content script -->
   <div th:replace="${'entity/views/' + viewType}:: scripts" />

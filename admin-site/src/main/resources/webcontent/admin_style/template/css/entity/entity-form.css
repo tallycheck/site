@@ -60,12 +60,15 @@
 }
 
 .entity-form-container div.field-box .radio-options{
-    padding-left: 20px;
+    padding-left: 10px;
 }
 
 .entity-form-container div.field-box .radio-options .option{
     font-weight: normal;
     margin-right: 10px;
+}
+.entity-form-container div.field-box .radio-options .option input[type="radio"]{
+    margin: 4px 5px 0 0;
 }
 
 .entity-form-container .field-label-group .error{
