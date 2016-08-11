@@ -1,9 +1,10 @@
 define(["jquery", "underscore",
-    "datamap","messages-dict",
-    "i18n!nls/entitytext", 'jquery-ui', 'jquery-ui-timepicker'],
+    "datamap","i18n!nls/commonText",
+    "i18n!nls/entityText", 'jquery-ui',
+    'jquery-ui-timepicker'],
   function ($, _,
-            dm, MsgDict,
-            entitytext, jui, juitp) {
+            dm, commonText,
+            entityText, jui, juitp) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -69,12 +70,12 @@ define(["jquery", "underscore",
           var celldisplaymodel = fi.cellModel;
           var tStr = [];
           if(celldisplaymodel.indexOf('date') >= 0){
-            var format = MsgDict.datepicker_format_date;
+            var format = commonText.datepicker_format_date;
             var d = $.datepicker.formatDate(format, dateVal, {});
             tStr.push(d);
           }
           if(celldisplaymodel.indexOf('time') >= 0){
-            var format = MsgDict.datepicker_format_time;
+            var format = commonText.datepicker_format_time;
             var d = $.datepicker.formatTime(format, { hour:dateVal.getHours(), minute:dateVal.getMinutes(), second:dateVal.getSeconds()}, {});
             tStr.push(d);
           }

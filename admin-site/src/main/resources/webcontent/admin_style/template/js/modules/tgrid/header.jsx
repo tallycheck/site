@@ -1,11 +1,11 @@
 define(["jquery",
     "underscore",
     'jsx!./filters',
-    "i18n!nls/entitytext",
+    "i18n!nls/entityText",
     'url-utility',
     "jquery-ui"],
   function ($, _,
-            TFilters, entitytext, UrlUtil,
+            TFilters, entityText, UrlUtil,
             jui) {
     var React = require('react');
     var ReactDOM = require('react-dom');

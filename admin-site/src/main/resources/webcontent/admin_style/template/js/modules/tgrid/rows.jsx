@@ -1,9 +1,9 @@
 define(["jquery", "underscore",
     'jsx!./cells',
     "datamap","math",
-    "i18n!nls/entitytext"],
+    "i18n!nls/entityText"],
   function ($, _, Cells, dm, math,
-            entitytext) {
+            entityText) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -68,7 +68,7 @@ define(["jquery", "underscore",
     });
     var NoRecordRow = React.createClass({
       render: function () {
-        var text = entitytext["NO_RECORDS_FOUND"];
+        var text = entityText["NO_RECORDS_FOUND"];
         var span = this.props.colspan;
         var hasRec = this.props.hasRecord;
         var style = {"display" : hasRec ? "none" : ""};

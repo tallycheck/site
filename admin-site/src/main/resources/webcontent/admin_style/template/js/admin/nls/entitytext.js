@@ -19,6 +19,8 @@ define({
         return "0 - 0 of 0 records";
       else
         return "" + (range.lo + 1) + " - " + range.hi + " of " + total + " records"
-    }
+    },
+
+    "FieldForeignKeyNotSelected":"(No value selected)"
   }
 });

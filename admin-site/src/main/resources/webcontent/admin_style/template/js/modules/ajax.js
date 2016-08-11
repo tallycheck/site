@@ -14,73 +14,83 @@ define(["jquery"],
       skipAjaxDefaultHandler : false
     }
 
-    function preSuccessHandler(data, textStatus, jqXHR, opts){
-      if('true' == jqXHR.getResponseHeader('loginpage')){
-        location.reload();
-        opts.skipAjaxDefaultHandler = true;
-        return;
+    class Interrupter {
+      preSuccess(data, textStatus, jqXHR, opts) {
+        if ('true' == jqXHR.getResponseHeader('loginpage')) {
+          location.reload();
+          opts.skipAjaxDefaultHandler = true;
+          return;
+        }
       }
 
-    }
-    function postSuccessHandler(data, textStatus, jqXHR, opts){
-      if(opts.skipAjaxDefaultHandler)
-        return;
+      postSuccess(data, textStatus, jqXHR, opts) {
+        if (opts.skipAjaxDefaultHandler)
+          return;
 
-      if(typeof data == "object"){
-        var operation = data.operation;
-        if(opts.handleRedirect){
-          if(operation == 'redirect'){
-            window.location.replace(data.url);
+        if (typeof data == "object") {
+          var operation = data.operation;
+          if (opts.handleRedirect) {
+            if (operation == 'redirect') {
+              window.location.replace(data.url);
+            }
           }
         }
       }
-    }
-    function preErrorHandler(jqXHR, textStatus, errorThrown, opts){
 
-    }
-    function postErrorHandler(jqXHR, textStatus, errorThrown, opts){
+      preError(jqXHR, textStatus, errorThrown, opts) {
+
+      }
+
+      postError(jqXHR, textStatus, errorThrown, opts) {
+
+      }
 
     }
 
     function ajax(options, callback){
-      var mOpts = $.extend({}, AJAX_DEFAULT_OPTIONS, options, $.isPlainObject(callback)?callback:null);
-      if($.isFunction(callback)) {mOpts.success = callback;}
+      var mopts = $.extend({}, AJAX_DEFAULT_OPTIONS, options,
+        $.isPlainObject(callback)? callback : null);
+      if($.isFunction(callback)) {mopts.success = callback;}
 
-      mOpts.type = mOpts.type || 'GET';
-      mOpts.error = mOpts.error || function(){};
+      var interrupter = options.interrupter;
+      interrupter = interrupter || (new Interrupter());
 
-      if(!mOpts.success.enhanced){
-        var oldSuccess = mOpts.success;
+      mopts.type = mopts.type || 'GET';
+      mopts.error = mopts.error || function(){};
+
+      if(!mopts.success.enhanced){
+        var oldSuccess = mopts.success;
         var newSuccess = function(data, textStatus, jqXHR){
-          preSuccessHandler(data, textStatus, jqXHR, mOpts);
-          if(!mOpts.skipAjaxDefaultHandler){
-            oldSuccess(data, textStatus, jqXHR, mOpts);
+          interrupter.preSuccess(data, textStatus, jqXHR, mopts);
+          if(!mopts.skipAjaxDefaultHandler){
+            oldSuccess(data, textStatus, jqXHR, mopts);
           }
-          if(!mOpts.skipAjaxDefaultHandler){
-            postSuccessHandler(data, textStatus, jqXHR, mOpts);
+          if(!mopts.skipAjaxDefaultHandler){
+            interrupter.postSuccess(data, textStatus, jqXHR, mopts);
           }
         };
         newSuccess.enhanced = true;
-        mOpts.success = newSuccess;
+        mopts.success = newSuccess;
       }
 
-      if(!mOpts.error.enhanced){
-        var oldError = mOpts.error;
+      if(!mopts.error.enhanced){
+        var oldError = mopts.error;
         var newError = function(jqXHR, textStatus, errorThrown){
-          preErrorHandler(jqXHR, textStatus, errorThrown, mOpts);
-          if(!mOpts.skipAjaxDefaultHandler){
-            oldError(jqXHR, textStatus, errorThrown, mOpts);
+          interrupter.preError(jqXHR, textStatus, errorThrown, mopts);
+          if(!mopts.skipAjaxDefaultHandler){
+            oldError(jqXHR, textStatus, errorThrown, mopts);
           }
-          if(!mOpts.skipAjaxDefaultHandler){
-            postErrorHandler(jqXHR, textStatus, errorThrown, mOpts);
+          if(!mopts.skipAjaxDefaultHandler){
+            interrupter.postError(jqXHR, textStatus, errorThrown, mopts);
           }
         }
         newError.enhanced = true;
-        mOpts.error = newError;
+        mopts.error = newError;
       };
 
-      return $.ajax(mOpts);
+      return $.ajax(mopts);
     }
+
     ajax.get = function(options, callback){
       if(options==null){
         options ={};

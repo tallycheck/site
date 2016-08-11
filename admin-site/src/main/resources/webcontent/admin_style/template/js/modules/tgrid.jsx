@@ -7,7 +7,7 @@ define(["jquery", "underscore", "datamap", "math",
     'jsx!./tgrid/body',
     'jsx!./tgrid/indicator',
     'jsx!./entity-modal-specs',
-    "i18n!nls/entitytext",
+    "i18n!nls/entityText",
     "ResizeSensor", "ajax","jquery.dotimeout"],
   function ($, _, dm, math,
             modal,
@@ -17,7 +17,7 @@ define(["jquery", "underscore", "datamap", "math",
             TGridHeader,
             TGridBody, TGridIndicator,
             EMSpecs,
-            entitytext, ResizeSensor, ajax, doTimeout) {
+            entityText, ResizeSensor, ajax, doTimeout) {
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Range = math.Range;
@@ -124,8 +124,9 @@ define(["jquery", "underscore", "datamap", "math",
       updateVersion : 0,
       getDefaultProps: function () {
         return {
+          isMain: false,
           maxVisibleRows: undefined,
-          namespace : 'gns_' + Math.floor(Math.random() * 1e15) + '_'
+          namespace : 'gns_' + Math.floor(Math.random() * 1e15) + '.'
         };
       },
       getInitialState: function () {
@@ -290,7 +291,6 @@ define(["jquery", "underscore", "datamap", "math",
         var entityContext = this.state.entityContext;
         var csrf = this.state.csrf;
 
-        var ms = ModalStack.getPageStack();
         class DeleteSpec extends EMSpecs.Delete{
           onDeleteSuccess(data, opts){
             super.onDeleteSuccess(data, opts);
@@ -309,6 +309,7 @@ define(["jquery", "underscore", "datamap", "math",
           type : entityContext.type,
           ceilingType : entityContext.ceilingType
         };
+        var ms = ModalStack.getPageStack();
         ms.pushModalSpec(new DeleteSpec({
           url : uri,
           data : postBeanData
@@ -416,9 +417,9 @@ define(["jquery", "underscore", "datamap", "math",
       }
     });
 
-    function renderGrid(queryResult, div) {
+    function renderGrid(queryResult, div, isMain) {
       var queryResponse = dm.queryResponse(queryResult);
-      var gridEle = <TGrid/>;
+      var gridEle = <TGrid isMain={isMain}/>;
 
       var grid = ReactDOM.render(gridEle, div);
 

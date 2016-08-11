@@ -5,19 +5,21 @@ define(["jquery", "underscore",
     "bootstrap",
     "datamap", "math",
     'jsx!modules/modal',
+    "basic",
     'UriTemplate',
     'jsx!../tgrid',
     'jsx!./group',
     'jsx!../entity-modal-specs',
-    "i18n!nls/entitytext",
+    "i18n!nls/entityText",
     "ResizeSensor", "ajax"],
   function ($, _, BS, dm, math,
             modal,
+            basic,
             UriTemplate,
             TGrid,
             TFormGroup,
             EMSpecs,
-            entitytext, ResizeSensor, ajax) {
+            entityText, ResizeSensor, ajax) {
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Group = TFormGroup.Group;
@@ -79,11 +81,14 @@ define(["jquery", "underscore",
     });
 
     var TabPage = React.createClass({
+      statics:{
+        RefPrefix : "tab."
+      },
       getDefaultProps: function () {
         return {
           tform : undefined,
-          tabInfo : null,
           formInfo : null,
+          tabInfo : null,
           tabId : "",
         };
       },
@@ -93,25 +98,33 @@ define(["jquery", "underscore",
       },
       render : function(){
         var tform = this.props.tform;
-        var fns = tform.props.namespace;
         var tab = this.props.tabInfo;
         var formInfo = this.props.formInfo;
-        var entityContext = tform.state.entityContext;
 
         var tabName = tab.name;
         var tabFN = tab.friendlyName;
         var groupSegs = _.map(tab.groups, function (group) {
-          return <Group formNamespace={fns}
-                        entityContext={entityContext}
-                        key={tabName} groupInfo={group} formInfo={formInfo}/>
+          return <Group tform={tform}
+                        ref={Group.RefPrefix + tabName} key={tabName}
+                        groupInfo={group} formInfo={formInfo}/>
         });
         var tabSeg = (
-          <div className="tab-pane fade" id={this.props.tabId}>
-            <div className="entity-tab" data-tab-name={tabName}>
-              {groupSegs}
-            </div>
+          <div className="tab-pane fade entity-tab"  data-tab-name={tabName} id={this.props.tabId}>
+            {groupSegs}
           </div>);
         return tabSeg;
+      },
+      groups : function(){
+        return basic.propertiesWithKeyPrefix(this.refs, Group.RefPrefix);
+      },
+      fieldItemHolders : function(){
+        var groups = this.groups();
+        var fihsArray = [];
+        _.each(groups, function(group){
+          var fihs = group.fieldItemHolders();
+          fihsArray.push(fihs);
+        });
+        return _.union.apply(null, fihsArray);
       }
     });
     var TabContent = React.createClass({
@@ -127,7 +140,8 @@ define(["jquery", "underscore",
         var formInfo = this.props.formInfo;
         var ids = this.props.ids;
         var tabPages = _.map(this.props.formInfo.tabs, function(tabInfo, idx){
-          return <TabPage key={tabInfo.name}
+          return <TabPage ref={TabPage.RefPrefix + tabInfo.name}
+                          key={tabInfo.name}
                           tform={_this.props.tform}
                           tabInfo={tabInfo}
                           formInfo={formInfo} tabId={ids[idx]}/>;
@@ -135,6 +149,18 @@ define(["jquery", "underscore",
         return (<div className="tab-content">
           {tabPages}
         </div>);
+      },
+      tabPages : function(){
+        return basic.propertiesWithKeyPrefix(this.refs, TabPage.RefPrefix);
+      },
+      fieldItemHolders : function(){
+        var tps = this.tabPages();
+        var fihsArray = [];
+        _.each(tps, function(tp){
+          var fihs = tp.fieldItemHolders();
+          fihsArray.push(fihs);
+        });
+        return _.union.apply(null, fihsArray);
       }
     });
 
@@ -155,12 +181,12 @@ define(["jquery", "underscore",
       },
       componentDidMount: function() {
         this.autoSelectTab();
-        var $tabNav = $(ReactDOM.findDOMNode(this.refs.tabNav));
-        $tabNav.find('a[data-toggle="tab"]').on('shown.bs.tab', this.onEventTabShown);
+        var $nav = $(ReactDOM.findDOMNode(this.refs.nav));
+        $nav.find('a[data-toggle="tab"]').on('shown.bs.tab', this.onEventTabShown);
       },
       componentWillUnmount: function() {
-        var $tabNav = $(ReactDOM.findDOMNode(this.refs.tabNav));
-        $tabNav.off('shown', 'a[data-toggle="tab"]', this.onEventTabShown);
+        var $nav = $(ReactDOM.findDOMNode(this.refs.nav));
+        $nav.off('shown', 'a[data-toggle="tab"]', this.onEventTabShown);
       },
       shouldComponentUpdate:function(nextProps, nextState, nextContext){
         var ps = this.state;
@@ -186,17 +212,17 @@ define(["jquery", "underscore",
         this.tabIds = ids;
         return (
           <div className="tab-holder entity-box">
-            <TabNav ref="tabNav" ids={ids} formInfo={formInfo}/>
-            <TabContent ref="tabContent" tform={this.props.tform} ids={ids} formInfo={formInfo}/>
+            <TabNav ref="nav" ids={ids} formInfo={formInfo}/>
+            <TabContent ref="content" tform={this.props.tform} ids={ids} formInfo={formInfo}/>
           </div>
         );
       },
       getAllTabNavItems : function(){
         var _this = this;
         var ids = this.tabIds;
-        var tabNav = this.refs.tabNav;
+        var nav = this.refs.nav;
         var tabNavItems =  _.map(ids, function(id){
-          var tabNavItem = tabNav.refs[id];
+          var tabNavItem = nav.refs[id];
           return tabNavItem;
         });
         return tabNavItems;

@@ -1,9 +1,9 @@
 define(["jquery",
     "underscore",
     "datamap",
-    "i18n!nls/entitytext"],
+    "i18n!nls/entityText"],
   function ($, _, dm,
-            entitytext) {
+            entityText) {
     var React = require('react');
 
     var Footer = React.createClass({
@@ -15,7 +15,7 @@ define(["jquery",
         return {range : _this.props.range, total : _this.props.total};
       },
       render: function () {
-        var text = entitytext["GRID_DATA_RANGE"](this.state.range, this.state.total);
+        var text = entityText["GRID_DATA_RANGE"](this.state.range, this.state.total);
         return (<div className="footer">
           <div>
             <span>

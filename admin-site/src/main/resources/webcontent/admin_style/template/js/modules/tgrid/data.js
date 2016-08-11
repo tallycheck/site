@@ -2,10 +2,10 @@ define(["jquery",
     "underscore",
     "datamap",
     "math",
-    "i18n!nls/entitytext",
+    "i18n!nls/entityText",
     'url-utility'],
   function ($, _, dm, math,
-            entitytext, UrlUtil) {
+            entityText, UrlUtil) {
     var Range = math.Range;
 
     var ReservedParameter={

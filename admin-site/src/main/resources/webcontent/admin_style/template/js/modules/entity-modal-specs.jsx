@@ -2,11 +2,11 @@ define(["jquery","underscore",
     "bootstrap",
     "jsx!./modal",
     "ajax",
-    "messages-dict", "i18n!nls/entitytext"],
+    "i18n!nls/commonText", "i18n!nls/entityText"],
   function($, _,
            BS, modal,
            ajax,
-           Msgs, entitytext){
+           commonText, entityText){
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -17,6 +17,8 @@ define(["jquery","underscore",
 
     class DeleteSpec extends ModalSpecBase {
       constructor(options){
+        var opd = options.data;
+        opd._csrf = opd._csrf || opd.csrf;
         super(options);
       }
       defaultOptions(){
@@ -33,8 +35,8 @@ define(["jquery","underscore",
         class DeleteConfirmContent extends ModalContents.MessageContent{
           constructor(){
             super({
-              titleText:Msgs.delete,
-              bodyText:Msgs.deleteConfirm
+              titleText:commonText.delete,
+              bodyText:commonText.deleteConfirm
             });
           }
           getFooter(){
@@ -51,8 +53,8 @@ define(["jquery","underscore",
         class DeletingContent extends ModalContents.ProcessingContent{
           constructor(){
             super({
-              titleText:Msgs.delete,
-              bodyText:Msgs.deleting
+              titleText:commonText.delete,
+              bodyText:commonText.deleting
             });
           }
           getFooter(){
@@ -75,7 +77,7 @@ define(["jquery","underscore",
                     if(errors)
                       errors = errors.global;
                     var deleteErrorOption ={
-                      titleText:Msgs.error,
+                      titleText:commonText.error,
                       bodyText: errors
                     };
                     _spec.updateContent(_spec.deleteErrorContent(deleteErrorOption));

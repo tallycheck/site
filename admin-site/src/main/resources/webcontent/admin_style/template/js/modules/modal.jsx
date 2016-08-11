@@ -5,11 +5,11 @@
 define(["jquery","underscore",
     "bootstrap",
     "ajax",
-    "messages-dict", "i18n!nls/entitytext"],
+    "i18n!nls/commonText", "i18n!nls/entityText"],
   function($, _,
            BS,
            ajax,
-           Msgs, entitytext){
+           commonText, entityText){
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -69,7 +69,7 @@ define(["jquery","underscore",
       }
       defaultOptions() {
         return {
-          titleText: Msgs.loading,
+          titleText: commonText.loading,
           bodyText: 'Undefined Loading Content'
         }
       }

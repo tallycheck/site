@@ -1,7 +1,7 @@
 define(["jquery", "underscore","../datamap","math",
-    "i18n!nls/entitytext"],
+    "i18n!nls/entityText"],
   function ($, _, dm, math,
-            entitytext) {
+            entityText) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -88,7 +88,7 @@ define(["jquery", "underscore","../datamap","math",
       actionObj : function(actionName){
         var links=this.props.links;
         var actionUri = links[actionName];
-        var actionText = entitytext["GRID_ACTION_" + actionName];
+        var actionText = entityText["GRID_ACTION_" + actionName];
         return {
           name:actionName,
           uri:actionUri,

@@ -142,6 +142,7 @@
        class="entity-content-breadcrumbs">
     <div class="breadcrumb-section" id="breadcrumbSection"></div>
     <div class="actions-section entity-main-action-group"></div>
+    <div class="actions-section tgroup"></div>
   </div>
   <div class="entity-content-main" th:fragment="entity_main">
     <div th:replace="${'entity/views/' + viewType}:: content" />
@@ -215,7 +216,7 @@
   <script type="text/javascript" th:src="@{/lib/jquery/jquery-2.1.4.js}"
           src="../../lib/jquery/jquery-2.1.4.min.js"></script>
 
-  <!-- content script -->
+    <!-- content script -->
   <div th:replace="${'entity/views/' + viewType}:: scripts" />
 
   <!-- Page logic -->

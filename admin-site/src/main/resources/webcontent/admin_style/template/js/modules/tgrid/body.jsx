@@ -1,12 +1,11 @@
 define(["jquery",
     "underscore",
     "math",
-    "i18n!nls/entitytext",
-    'url-utility',
+    "i18n!nls/entityText",
     'jsx!./rows',
     "perfectScrollbar"],
   function ($, _, math,
-            entitytext, UrlUtil, TGridRows,
+            entityText, TGridRows,
             Ps) {
     var React = require('react');
     var ReactDOM = require('react-dom');

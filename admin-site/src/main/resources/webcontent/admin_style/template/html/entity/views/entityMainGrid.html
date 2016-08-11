@@ -3,6 +3,11 @@
     <div id="gridSlot">
     </div>
 
+    <div th:include="components/entity-grid :: full_entity_grid "
+         th:with="data=${queryResult},
+       isTemplate=false,
+       scope=${scope}, alignType='window', alignOffset='50' "/>
+
     <!--
       <div th:include="components/entity-grid :: full_entity_grid "
          th:with="data=${queryResult},

@@ -9,6 +9,6 @@ define(function (require) {
     datamap = require("datamap");
 
   //var tgrid = require('jsx!../modules/tgrid');
-  var readResult = datamap.data("readResult");
-  tform.renderForm(readResult, document.getElementById("formSlot"));
+  var readResult = datamap.data("formResult");
+  tform.renderForm(readResult, document.getElementById("formSlot"), true);
 });

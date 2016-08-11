@@ -1,8 +1,8 @@
 define(["jquery",
     "underscore",
-    "i18n!nls/entitytext",
+    "i18n!nls/entityText",
     'url-utility'],
-  function ($, _, entitytext, UrlUtil) {
+  function ($, _, entityText, UrlUtil) {
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -210,7 +210,7 @@ define(["jquery",
                 </div>
                 <hr/>
                 <div className="bottom-control">
-                  <a ref='reset' className="filter-reset-button" href="#">{entitytext.RESET}</a>
+                  <a ref='reset' className="filter-reset-button" href="#">{entityText.RESET}</a>
                   <button ref='fire' className="filter-button btn btn-info">
                     <i className="fa fa-filter"></i>
                   </button>
@@ -223,9 +223,9 @@ define(["jquery",
       class BooleanFilter extends BaseFilter {
         constructor(){
           super();
-          this.state = {
+          this.state = _.extend({}, this.state, {
             checked: ''
-          };
+          });
         }
         setParam (val){
           var $optionsGroup = $(this.refs.optionsGroup);
@@ -280,7 +280,7 @@ define(["jquery",
                 </div>
                 <hr/>
                 <div className="bottom-control">
-                  <a ref='reset' className="filter-reset-button" href="#">{entitytext.RESET}</a>
+                  <a ref='reset' className="filter-reset-button" href="#">{entityText.RESET}</a>
                   <button ref='fire' className="filter-button btn btn-info">
                     <i className="fa fa-filter"></i>
                   </button>

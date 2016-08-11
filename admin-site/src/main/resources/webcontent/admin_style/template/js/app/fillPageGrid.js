@@ -10,5 +10,5 @@ define(function (require) {
 
   //var tgrid = require('jsx!../modules/tgrid');
   var queryResult = datamap.data("queryResult");
-  tgrid.renderGrid(queryResult, document.getElementById("gridSlot"));
+  tgrid.renderGrid(queryResult, document.getElementById("gridSlot"), true);
 });

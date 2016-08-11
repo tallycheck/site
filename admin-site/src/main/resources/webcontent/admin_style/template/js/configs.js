@@ -21,6 +21,7 @@ requirejs.config({
     "ResizeSensor":"/lib/css-element-queries/ResizeSensor",
     "UriTemplate" :"/lib/uri/uri-templates",
     "url-parser" : "/lib/js-url-2.3.0/url",
+    "summernote" : "/lib/summernote-0.6.16/summernote.min",
 
     //modules
     "modules" : "../modules",
@@ -28,7 +29,7 @@ requirejs.config({
     "math": '/js/modules/math',
     "ajax" : "/js/modules/ajax",
     "url-utility" : "/js/modules/url-utility",
-    'messages-dict' : "/js/modules/messages",
+    "basic" :"/js/modules/basic",
 
     //app
     "app" : "../app"
@@ -56,6 +57,9 @@ requirejs.config({
     },
     'url-parser' :{
       exports : 'window.url'
+    },
+    "summernote" :{
+      deps: ['jquery','bootstrap'],
     }
   },
   jsx: {
