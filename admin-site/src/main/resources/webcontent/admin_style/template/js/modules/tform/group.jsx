@@ -1,27 +1,22 @@
 /**
  * Created by gaoyuan on 8/4/16.
  */
-define(["jquery", "underscore", "datamap", "math",
-    'jsx!modules/modal',
-    "basic",
-    'UriTemplate',
-    'jsx!../tgrid',
-    'jsx!./fields',
-    'jsx!../entity-modal-specs',
-    "i18n!nls/entityText",
-    "ResizeSensor", "ajax","jquery.dotimeout"],
-  function ($, _, dm, math,
-            modal,
-            basic,
-            UriTemplate,
-            TGrid,
-            TFormFields,
-            EMSpecs,
-            entityText, ResizeSensor, ajax, doTimeout) {
+define(
+  function(require, exports, module){
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var dm = require('datamap');
+    var math = require('math');
+    var basic = require('basic');
+    var UriTemplate = require('UriTemplate');
+    var FieldsModule = require('jsx!./fields');
+    var entityText = require('i18n!nls/entityText');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
 
-    var FieldItemHolder = TFormFields.FieldItemHolder;
+    var FieldItems = FieldsModule.FieldItems;
+    var FieldItemHolder = FieldsModule.FieldItemHolder;
 
     var Group = React.createClass({
       statics : {
@@ -41,21 +36,25 @@ define(["jquery", "underscore", "datamap", "math",
         var formInfo = this.props.formInfo;
         var tform = this.props.tform;
 
-        var fns = this.props.tform.props.namespace;
-        var entityContext = this.props.tform.state.entityContext;
+        var fns = tform.props.namespace;
+        var entityContext = tform.state.entityContext;
         var entity = tform.state.entity;
         var bean=entity.bean;
+        var errors = tform.state.errors;
+        var fieldsErrors = errors.fields || {};
 
         var groupName = group.name;
         var groupFN = group.friendlyName;
         var fieldsSegs = _.map(group.fields, function (fieldName) {
           var field = formInfo.fields[fieldName];
-          var fieldValue = dm.entityProperty(bean, fieldName);
+          var fieldValue = basic.beanProperty(bean, fieldName);
+          var fieldErrors = fieldsErrors[fieldName];
           var fieldItemHolder = <FieldItemHolder formNamespace={fns}
                                                  fieldinfo={field}
                                                  entityContext={entityContext}
                                                  initValue={fieldValue}
                                                  bean={bean}
+                                                 fieldErrors={fieldErrors}
                                                  ref={FieldItemHolder.RefPrefix + field.name}
                                                  key={field.name}/>;
           return fieldItemHolder;
@@ -72,7 +71,5 @@ define(["jquery", "underscore", "datamap", "math",
         return basic.propertiesWithKeyPrefix(this.refs, FieldItemHolder.RefPrefix);
       }
     });
-    return {
-      Group: Group
-    };
+    exports.Group = Group;
   });

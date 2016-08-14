@@ -1,11 +1,14 @@
-define(["jquery", "underscore",
-    "datamap","i18n!nls/commonText",
-    "i18n!nls/entityText",
-    'jquery-ui', 'jquery-ui-timepicker','summernote'],
-  function ($, _,
-            dm, commonText,
-            entityText,
-            jui, juitp,summernote) {
+define(
+  function(require, exports, module){
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var dm = require('datamap');
+    var commonText = require('i18n!nls/commonText');
+    var entityText = require('i18n!nls/entityText');
+    var jui = require('jquery-ui');
+    var juitp = require('jquery-ui-timepicker');
+    var summernote = require('summernote');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -345,6 +348,7 @@ define(["jquery", "underscore",
           entityContext : undefined,
           initValue : undefined,
           bean : undefined,
+          fieldErrors : {}
         };
       },
 
@@ -357,7 +361,6 @@ define(["jquery", "underscore",
         var visible = field.formVisible;
         var style = visible ? {} : {"display": "none"};
         var FieldType = FieldItems.getComponentType(fieldType);
-        var className = "field-box form-group";
         var labelClassName = "field-label control-label" + ((!!field.required)? " required" : "");
         var fieldItemProps = {
           ref : "fieldElement",
@@ -367,12 +370,17 @@ define(["jquery", "underscore",
           fieldinfo: field,
           initValue: _this.props.initValue
         };
+        var fespan = _.map(_this.props.fieldErrors, function(ge, i){
+          return <span key={i} className="error control-label">{ge}</span>
+        });
+        var className = "field-box form-group" + (fespan.length ? " has-error" : "");
         var fieldItemElement = React.createElement(FieldType, fieldItemProps);
 
         var fieldSeg = (
           <div className={className} style={style}>
             <div className="field-label-group">
               <label className={labelClassName}>{fieldFN}</label>
+              {fespan}
             </div>
             {fieldItemElement}
           </div>);
@@ -381,5 +389,7 @@ define(["jquery", "underscore",
     });
     FieldItems.FieldItemHolder = FieldItemHolder;
 
-    return FieldItems;
+    exports.FieldItems = FieldItems;
+    exports.FieldItemHolder = FieldItemHolder;
+
   });

@@ -1,18 +1,18 @@
-define(["jquery",
-    "underscore",
-    "datamap",
-    "math",
-    "i18n!nls/entityText",
-    'url-utility'],
-  function ($, _, dm, math,
-            entityText, UrlUtil) {
+define(
+  function(require, exports, module){
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var math = require('math');
+    var entityText = require('i18n!nls/entityText');
+    var UrlUtil = require('url-utility');
+    var dm = require('datamap');
+    var UrlUtil = require('url-utility');
+    var EntityRequest = require('entity-request');
+
     var Range = math.Range;
 
-    var ReservedParameter={
-      StartIndex :'startIndex',
-      PageSize : 'pageSize'
-    };
-    var PersistentUrlParams = [ReservedParameter.PageSize];
+    var ReservedParameter=EntityRequest.QueryUriReservedParams;
+    var PersistentUrlParams = EntityRequest.QueryUriPersistentParams;
 
     var GridDataAccess = function(grid){
       this.grid = grid;
@@ -44,7 +44,7 @@ define(["jquery",
         var cParamKeys = this.gatherCriteriaParameterKeys();
 
         var cParamObj = {};
-        cParamKeys.forEach(function(ckey, index){
+        _.each(cParamKeys, function(ckey, index){
           var pv = paramObj[ckey];
           cParamObj[ckey] = pv;
           if(pv !== undefined){
@@ -74,7 +74,7 @@ define(["jquery",
       },
       getAllFilterHolder : function(){
         var header = this.grid.refs.header;
-        return header.getAllFilterHolder();
+        return header.filterHolders();
       },
       gatherCriteriaParameterKeys : function(){
         var keys = [];

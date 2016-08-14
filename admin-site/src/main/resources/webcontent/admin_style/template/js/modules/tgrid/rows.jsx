@@ -1,7 +1,7 @@
-define(["jquery", "underscore",
+define(['jquery', 'underscore',
     'jsx!./cells',
-    "datamap","math",
-    "i18n!nls/entityText"],
+    'datamap','math',
+    'i18n!nls/entityText'],
   function ($, _, Cells, dm, math,
             entityText) {
     var React = require('react');

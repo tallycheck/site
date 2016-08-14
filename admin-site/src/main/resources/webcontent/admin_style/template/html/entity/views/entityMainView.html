@@ -3,12 +3,9 @@
     <div id="formSlot">
     </div>
 
-    <div th:include="components/entity-form :: full_entity_form"
-       th:with="data=${readResult}, scope=${formScope}"/>
-
 </section>
 
 <div th:fragment="scripts">
     <script th:attr="data-main=@{/js/form-page.js}"
-            th:src="@{/lib/require.js}" src="../../lib/require.js"></script>
+            th:src="@{/lib/require-full.js}" src="../../lib/require.js"></script>
 </div>

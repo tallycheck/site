@@ -1,17 +1,31 @@
-define([ "underscore"],
-  function(_) {
+define(
+  function(require, exports, module) {
+    var _ = require('underscore');
 
-    var propertiesWithKeyPrefix = function(object, prefix) {
+
+    function beanProperty(bean, propertyPath) {
+      var pieces = propertyPath.split('.');
+      var pro = bean;
+      pieces.some(function (t, i) {
+        if (t) {
+          pro = pro[t];
+          if (pro == null)
+            return true;
+        }
+      });
+      return pro;
+    }
+
+    var propertiesWithKeyPrefix = function (object, prefix) {
       var refsKeys = _.keys(object);
-      var fitKeys = _.filter(refsKeys, function(key){
+      var fitKeys = _.filter(refsKeys, function (key) {
         return key.startsWith(prefix);
       });
-      return _.map(fitKeys, function(tn){
+      return _.map(fitKeys, function (tn) {
         return object[tn];
       });
     }
 
-    return {
-      propertiesWithKeyPrefix : propertiesWithKeyPrefix
-    };
+    exports.beanProperty = beanProperty;
+    exports.propertiesWithKeyPrefix = propertiesWithKeyPrefix;
   });

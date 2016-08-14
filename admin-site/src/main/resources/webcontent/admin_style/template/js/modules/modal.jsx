@@ -2,10 +2,10 @@
  * Created by gaoyuan on 8/1/16.
  */
 
-define(["jquery","underscore",
-    "bootstrap",
-    "ajax",
-    "i18n!nls/commonText", "i18n!nls/entityText"],
+define(['jquery','underscore',
+    'bootstrap',
+    'ajax',
+    'i18n!nls/commonText', 'i18n!nls/entityText'],
   function($, _,
            BS,
            ajax,
@@ -16,6 +16,10 @@ define(["jquery","underscore",
     class ModalContent {
       constructor(options){
         this.options = _.extend({}, this.defaultOptions(), options);
+        this.modal = null;
+      }
+      setModal(modal){
+        this.modal = modal;
       }
       defaultOptions(){return {};}
       getTitle(){return '';}
@@ -144,7 +148,8 @@ define(["jquery","underscore",
           modalStack : null,
           isFirst : false,
           animate : false,
-          spec : new ModalSpecBase()
+          spec : new ModalSpecBase(),
+          name : "Modal"
         };
       },
       getInitialState : function(){
@@ -185,6 +190,10 @@ define(["jquery","underscore",
           var $ele = $(event.delegateTarget);
           modalStack.popModalSpec(spec);
         });
+        $modal.on('hidden.bs.modal', function(event){
+          var $ele = $(event.delegateTarget);
+          modalStack.onModalHidden(spec);
+        });
         var content = this.state.content;
         if(content == null) {
           this.hide();
@@ -200,7 +209,9 @@ define(["jquery","underscore",
       render :function(){
         var content = this.state.content;
         if(content == null) content=new BlankContent();
+        content.setModal(this);
         var modalClassName = "modal " + (this.props.animate ? "fade" : "");
+        var body = content.getBody();
         return (<div ref="modalRoot" className={modalClassName} role="dialog" style={{display: "block"}}>
           <div className="modal-dialog">
             <div className="modal-content">
@@ -212,7 +223,7 @@ define(["jquery","underscore",
                 </div>
               </div>
               <div ref="body" className="modal-body">
-                {content.getBody()}
+                {body}
               </div>
               <div ref="footer" className="modal-footer">
                 {content.getFooter()}
@@ -223,17 +234,19 @@ define(["jquery","underscore",
       }
     });
 
+    var ModalStackContainerId = "moduleStackContainer";
+    var ModalStackContainerSelector = 'body > div#moduleStackContainer';
     var ModalStack = React.createClass({
       statics :{
         getPageStack : function(){
           var ModalStackDataKey = 'modal-stack.data.key';
 
-          var $stack = $('body > div#moduleStackContainer');
+          var $stack = $(ModalStackContainerSelector);
           switch($stack.length){
             case 0:{
-              var newContainer = $('<div>', {'id' : 'moduleStackContainer'});
+              var newContainer = $('<div>', {'id' : ModalStackContainerId});
               $('body').append(newContainer);
-              $stack = $('body > div#moduleStackContainer');
+              $stack = $(ModalStackContainerSelector);
               var stack0 = $stack[0]
               var ele = React.createElement(ModalStack, {});
               var ms = ReactDOM.render(ele, stack0);
@@ -242,6 +255,22 @@ define(["jquery","underscore",
             }
             case 1:{
               return $($stack[0]).data(ModalStackDataKey);
+            }
+            default:
+              throw new Error("Multiple moduleStackContainer found!");
+          }
+        },
+        dropPageStack : function () {
+          var $stack = $(ModalStackContainerSelector);
+          switch($stack.length){
+            case 0:{
+              return;
+            }
+            case 1:{
+              var stack0 = $stack[0]
+              var umok = ReactDOM.unmountComponentAtNode(stack0);
+              $stack.remove();
+              break;
             }
             default:
               throw new Error("Multiple moduleStackContainer found!");
@@ -263,6 +292,8 @@ define(["jquery","underscore",
       componentDidUpdate:function(prevProps, prevState, prevContext, rootNode){
         var startState = prevState;
         var endState = this.state;
+        var startLen = startState.modalSpecs.length;
+        var endLen = endState.modalSpecs.length;
       },
       render : function(){
         var count = this.state.modalSpecs.length;
@@ -289,7 +320,12 @@ define(["jquery","underscore",
         this.setState({
           modalSpecs:specs,
           animateLast : false
-        })
+        });
+      },
+      onModalHidden : function(spec){
+        if(this.state.modalSpecs.length == 0){
+          ModalStack.dropPageStack();
+        }
       }
     });
 

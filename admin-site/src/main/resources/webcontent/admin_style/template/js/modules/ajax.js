@@ -1,4 +1,4 @@
-define(["jquery"],
+define(['jquery'],
   function ($){
     function getCsrfToken() {
       var csrfTokenInput = $('input[name="_csrf"]');
@@ -24,17 +24,17 @@ define(["jquery"],
       }
 
       postSuccess(data, textStatus, jqXHR, opts) {
-        if (opts.skipAjaxDefaultHandler)
-          return;
-
-        if (typeof data == "object") {
-          var operation = data.operation;
-          if (opts.handleRedirect) {
-            if (operation == 'redirect') {
-              window.location.replace(data.url);
-            }
-          }
-        }
+        //if (opts.skipAjaxDefaultHandler)
+        //  return;
+        //
+        //if (typeof data == "object") {
+        //  var operation = data.operation;
+        //  if (opts.handleRedirect) {
+        //    if (operation == 'redirect') {
+        //      window.location.replace(data.url);
+        //    }
+        //  }
+        //}
       }
 
       preError(jqXHR, textStatus, errorThrown, opts) {

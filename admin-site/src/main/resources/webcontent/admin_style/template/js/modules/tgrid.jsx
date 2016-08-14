@@ -1,23 +1,25 @@
-define(["jquery", "underscore", "datamap", "math",
-    'jsx!modules/modal',
-    'UriTemplate',
-    './tgrid/data',
-    'jsx!./tgrid/toolbar',
-    'jsx!./tgrid/header',
-    'jsx!./tgrid/body',
-    'jsx!./tgrid/indicator',
-    'jsx!./entity-modal-specs',
-    "i18n!nls/entityText",
-    "ResizeSensor", "ajax","jquery.dotimeout"],
-  function ($, _, dm, math,
-            modal,
-            UriTemplate,
-            TGridDA,
-            TGridToolbar,
-            TGridHeader,
-            TGridBody, TGridIndicator,
-            EMSpecs,
-            entityText, ResizeSensor, ajax, doTimeout) {
+define(
+  function(require, exports, module){
+
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var dm = require('datamap');
+    var math = require('math');
+    var modal = require('jsx!modules/modal');
+    var UriTemplate = require('UriTemplate');
+    var TGridDA = require('./tgrid/data');
+    var TGridToolbar = require('jsx!./tgrid/toolbar');
+    var TGridHeader = require('jsx!./tgrid/header');
+    var TGridBody = require('jsx!./tgrid/body');
+    var TGridIndicator = require('jsx!./tgrid/indicator');
+    var doTimeout = require('jquery.dotimeout');
+    var entityText = require('i18n!nls/entityText');
+    var ResizeSensor = require('ResizeSensor');
+    var ajax = require('ajax');
+    var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
+    var EntityRequest = require('entity-request');
+    var EntityResponse = require('entity-response');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Range = math.Range;
@@ -66,7 +68,7 @@ define(["jquery", "underscore", "datamap", "math",
         updateStateBy: function (grid, queryResult, fresh) {
           fresh = !!(fresh);
           var origState = grid.state;
-          var queryResponse = dm.queryResponse(queryResult);
+          var queryResponse = EntityResponse.QueryResponse.newInstance(queryResult);
           var ranges = fresh ? new Ranges() : origState.recordRanges;
           var beansMap = fresh ? new Object() : _.extend({}, origState.beansMap);
 
@@ -84,7 +86,7 @@ define(["jquery", "underscore", "datamap", "math",
           ranges.add(range);
           var pageSize = entities.pageSize;
           var fullQuery = queryResult.fullQuery;
-          var paramObj = grid.dataAccess().splitParameter(fullQuery);
+          var paramObj = queryResponse.splitParameter(fullQuery);
 
           var newState = {
             queryUri : queryResult.queryUri,
@@ -121,11 +123,10 @@ define(["jquery", "underscore", "datamap", "math",
 
       //TGrid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> TGrid.stateUpdate
       //avoid Inverse data Flow
-      updateVersion : 0,
+      updateVersion : -1,
       getDefaultProps: function () {
         return {
           isMain: false,
-          maxVisibleRows: undefined,
           namespace : 'gns_' + Math.floor(Math.random() * 1e15) + '.'
         };
       },
@@ -170,36 +171,11 @@ define(["jquery", "underscore", "datamap", "math",
       },
       doResize:function(){
         var header = this.refs.header;
-        var headerFilterGroup = header.refs.colsGroup;
+        var headerFilterGroup = header.refs.filterGroup;
         var body = this.refs.body;
         var widths = headerFilterGroup.calcStartingWidths();
         headerFilterGroup.updateColumnWidth(widths);
         body.syncHeaderColumns();
-      },
-      onSelectedIndexChanged : function(oldBean, newBean, oldIndex, newIndex ){
-        console.log("selected index changed: " + oldIndex + " -> " + newIndex);
-        if(newBean){
-          var idField = this.state.entityContext.idField;
-          var id = dm.entityProperty(newBean, idField);
-          this.refs.toolbar.focuseToId('' + id);
-        }else{
-          this.refs.toolbar.focuseToId('');
-        }
-      },
-      onVisibleRangeUpdate:function(){
-        var body = this.refs.body;
-        var footer = this.refs.footer;
-
-        var startIndex = body.visibleTopIndex();
-        var endIndex = body.visibleBottomIndex();
-        var totalRecords = this.state.totalRecords;
-
-        var obj = {
-          range: new Range(startIndex, endIndex),
-          total: totalRecords
-        };
-        footer.setState(obj);
-        this.triggerLoadPending();
       },
       componentDidMount:function(){
         var node = ReactDOM.findDOMNode(this);
@@ -223,16 +199,20 @@ define(["jquery", "underscore", "datamap", "math",
         return false;
       },
       componentWillUpdate:function(nextProps, nextState,nextContext, transaction){
-        if((this.state.cparameter) != (nextState.cparameter)){
+        var ps = this.state;
+        var ns = nextState;
+        if((ps.cparameter) != (ns.cparameter)){
           this.updateVersion ++;
-          this.setState({version:this.updateVersion});
+          this.setState({version: this.updateVersion});
         }
         console.log("GRID will update");
       },
       componentDidUpdate:function(prevProps, prevState, prevContext, rootNode){
-        if((prevState.cparameter) != (this.state.cparameter)){
-          this.onCriteriaParameterUpdate(prevState.cparameter, this.state.cparameter);
-          console.log("GRID cparameter changed");
+        var ps = prevState;
+        var ns = this.state;
+        if((ps.cparameter) != (ns.cparameter)){
+          console.log("GRID cparameter changed: [ '" + ps.cparameter + "' -> '" + ns.cparameter+"' ]");
+          this.updateHeaderParameter(ps.cparameter, ns.cparameter);
         }
         this.doResize();
         this.updateBodyMaxHeight();
@@ -262,10 +242,35 @@ define(["jquery", "underscore", "datamap", "math",
           </div>
           );
       },
+      onSelectedIndexChanged : function(oldBean, newBean, oldIndex, newIndex ){
+        console.log("selected index changed: " + oldIndex + " -> " + newIndex);
+        if(newBean){
+          var idField = this.state.entityContext.idField;
+          var id = dm.beanProperty(newBean, idField);
+          this.refs.toolbar.focuseToId('' + id);
+        }else{
+          this.refs.toolbar.focuseToId('');
+        }
+      },
+      onVisibleRangeUpdate:function(){
+        var body = this.refs.body;
+        var footer = this.refs.footer;
+
+        var startIndex = body.visibleTopIndex();
+        var endIndex = body.visibleBottomIndex();
+        var totalRecords = this.state.totalRecords;
+
+        var obj = {
+          range: new Range(startIndex, endIndex),
+          total: totalRecords
+        };
+        footer.setState(obj);
+        this.triggerLoadPending();
+      },
       onScroll:function(){
 
       },
-      onCriteriaParameterUpdate : function(prevCparam, nextCparam){
+      updateHeaderParameter : function(prevCparam, nextCparam){
         if(nextCparam == prevCparam)
           return;
         var header = this.refs.header;
@@ -276,10 +281,34 @@ define(["jquery", "underscore", "datamap", "math",
         });
       },
       onEventCreateButtonClick : function(e){
-
+        var grid = this;
+        var body = this.refs.body;
+        var readUri = this.state.links.create;
+        var uri = readUri;
+        require([EntityModalSpecsPath], function(EMSpecs){
+          class CreateSpec extends EMSpecs.Create{
+          }
+          var ms = ModalStack.getPageStack();
+          ms.pushModalSpec(new CreateSpec({
+            url : uri
+          }));
+        });
       },
       onEventUpdateButtonClick : function(e){
-
+        var grid = this;
+        var body = this.refs.body;
+        var bean = body.selectedBean();
+        var readUriTemplate = this.state.links.read;
+        var idObj = this.state.entityContext.getStandardIdObject(bean);
+        var uri = new UriTemplate(readUriTemplate).fill(idObj);
+        require([EntityModalSpecsPath], function(EMSpecs){
+          class ReadSpec extends EMSpecs.Read{
+          }
+          var ms = ModalStack.getPageStack();
+          ms.pushModalSpec(new ReadSpec({
+            url : uri
+          }));
+        });
       },
       onEventDeleteButtonClick : function(e){
         var grid = this;
@@ -290,40 +319,38 @@ define(["jquery", "underscore", "datamap", "math",
         var uri = new UriTemplate(deleteUriTemplate).fill(idObj);
         var entityContext = this.state.entityContext;
         var csrf = this.state.csrf;
-
-        class DeleteSpec extends EMSpecs.Delete{
-          onDeleteSuccess(data, opts){
-            super.onDeleteSuccess(data, opts);
-            body.selectIndex(-1);
-            opts.skipAjaxDefaultHandler = true;
-            grid.doLoadByFilters();
-          }
-          onDeleteFail(data, opts){
-            super.onDeleteFail(data, opts);
-            console.log('Todo: Handle deleting fail');
-          }
-        };
-
-        var postBeanData = {
-          _csrf : csrf,
-          type : entityContext.type,
-          ceilingType : entityContext.ceilingType
-        };
-        var ms = ModalStack.getPageStack();
-        ms.pushModalSpec(new DeleteSpec({
+        var delOpts = {
           url : uri,
-          data : postBeanData
-        }));
+          csrf : csrf,
+          type : entityContext.type,
+          ceilingType : entityContext.ceilingType,
+          deleteExtraHandler : {
+            onSuccess:function(){
+              body.selectIndex(-1);
+              grid.doLoadByFilters();
+            }
+          }
+        };
+
+        require([EntityModalSpecsPath], function(EMSpecs){
+          var EMSpecs = require(EntityModalSpecsPath);
+          class DeleteSpec extends EMSpecs.Delete{
+          };
+
+          var ms = ModalStack.getPageStack();
+          ms.pushModalSpec(new DeleteSpec(delOpts));
+        });
       },
       dataAccess : function(){
         return new GridDataAccess(this);
       },
       requestDoFilterByFilters : function (caller) {
-        console.log("requestDoFilterByFilters");
-        var callerVersion = caller.state.version;
-        if(this.updateVersion == callerVersion)
-          return;
-        this.doLoadByFilters();
+        if(caller.constructor.displayName != 'FilterHolder')
+          throw new Error("Type error.");
+        console.log("grid requestDoFilterByFilters");
+        if(caller.leadingAhead(this.updateVersion)){
+          this.doLoadByFilters();
+        }
       },
       doLoad : function(loadEvent){
         switch (loadEvent.source){
@@ -412,13 +439,12 @@ define(["jquery", "underscore", "datamap", "math",
         };
         var optionsclone = $.extend({}, options);
 
-        console.log("will load url    : " + url);
+        console.log("Fire url  : " + url);
         ajax.get(options);
       }
     });
 
     function renderGrid(queryResult, div, isMain) {
-      var queryResponse = dm.queryResponse(queryResult);
       var gridEle = <TGrid isMain={isMain}/>;
 
       var grid = ReactDOM.render(gridEle, div);
@@ -426,7 +452,6 @@ define(["jquery", "underscore", "datamap", "math",
       TGrid.updateStateBy(grid, queryResult);
     }
 
-    return {
-      renderGrid: renderGrid
-    };
+    exports.TGrid = TGrid;
+    exports.renderGrid = renderGrid;
   });

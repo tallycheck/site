@@ -1,25 +1,18 @@
 /**
  * Created by gaoyuan on 8/4/16.
  */
-define(["jquery", "underscore",
-    "bootstrap",
-    "datamap", "math",
-    'jsx!modules/modal',
-    "basic",
-    'UriTemplate',
-    'jsx!../tgrid',
-    'jsx!./group',
-    'jsx!../entity-modal-specs',
-    "i18n!nls/entityText",
-    "ResizeSensor", "ajax"],
-  function ($, _, BS, dm, math,
-            modal,
-            basic,
-            UriTemplate,
-            TGrid,
-            TFormGroup,
-            EMSpecs,
-            entityText, ResizeSensor, ajax) {
+define(
+  function(require, exports, module){
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var BS = require('bootstrap');
+    var dm = require('datamap');
+    var math = require('math');
+    var basic = require('basic');
+    var UriTemplate = require('UriTemplate');
+    var entityText = require('i18n!nls/entityText');
+    var TFormGroup = require('jsx!./group');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
     var Group = TFormGroup.Group;
@@ -261,7 +254,5 @@ define(["jquery", "underscore",
       }
     });
 
-    return {
-      TabContainer : TabContainer
-    };
+    exports.TabContainer = TabContainer;
   });

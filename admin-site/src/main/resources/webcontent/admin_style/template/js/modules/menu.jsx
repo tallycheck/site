@@ -1,7 +1,7 @@
 /**
  * Created by Gao Yuan on 2016/3/27.
  */
-define(["jquery", "underscore", "i18n!nls/menutext"],
+define(['jquery', 'underscore', 'i18n!nls/menutext'],
   function ($, _, menutext) {
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -109,7 +109,7 @@ define(["jquery", "underscore", "i18n!nls/menutext"],
     });
 
     function renderMenu(menuData, menuPath, nav) {
-      var datamap = require("datamap");
+      var datamap = require('datamap');
       menuData = menuData || datamap.data('menu');
       menuPath = menuPath || datamap.data('menuPath');
       ReactDOM.render(
@@ -119,7 +119,7 @@ define(["jquery", "underscore", "i18n!nls/menutext"],
     }
 
     function renderBreadcrumb(menuData, menuPath, div) {
-      var datamap = require("datamap");
+      var datamap = require('datamap');
       menuData = menuData || datamap.data('menu');
       menuPath = menuPath || datamap.data('menuPath');
       var entityName = datamap.data('entityName');

@@ -3,6 +3,7 @@
  */
 requirejs.config({
   baseUrl: '/js/admin',
+  waitSeconds: 200,
   paths: {
     //react support
     "react":"/lib/react/react-with-addons",
@@ -30,6 +31,10 @@ requirejs.config({
     "ajax" : "/js/modules/ajax",
     "url-utility" : "/js/modules/url-utility",
     "basic" :"/js/modules/basic",
+
+    "entity-info" :"/js/modules/entity-info",
+    "entity-request" :"/js/modules/entity-request",
+    "entity-response" :"/js/modules/entity-response",
 
     //app
     "app" : "../app"

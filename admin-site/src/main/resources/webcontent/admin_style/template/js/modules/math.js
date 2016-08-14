@@ -1,4 +1,4 @@
-define(["underscore"], function(_){
+define(['underscore'], function(_){
   //[lo, hi)
   var Range = function (rangeDesc) {
     if (arguments.length == 2) {

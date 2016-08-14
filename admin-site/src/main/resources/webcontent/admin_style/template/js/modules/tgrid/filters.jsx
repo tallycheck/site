@@ -1,6 +1,6 @@
-define(["jquery",
-    "underscore",
-    "i18n!nls/entityText",
+define(['jquery',
+    'underscore',
+    'i18n!nls/entityText',
     'url-utility'],
   function ($, _, entityText, UrlUtil) {
     var React = require('react');

@@ -1,21 +1,23 @@
 /**
  * Created by gaoyuan on 8/4/16.
  */
-define(["jquery", "underscore", "datamap", "math",
-    'jsx!modules/modal',
-    'UriTemplate',
-    'jsx!./tgrid',
-    'jsx!./tform/tab',
-    'jsx!./entity-modal-specs',
-    "i18n!nls/entityText",
-    "ResizeSensor", "ajax", 'url-utility'],
-  function ($, _, dm, math,
-            modal,
-            UriTemplate,
-            TGrid,
-            TFormTabs,
-            EMSpecs,
-            entityText, ResizeSensor, ajax, UrlUtil) {
+define(
+  function(require, exports, module){
+
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var dm = require('datamap');
+    var math = require('math');
+    var modal = require('jsx!modules/modal');
+    var UriTemplate = require('UriTemplate');
+    var TFormTabs = require('jsx!./tform/tab');
+    //var EMSpecs = require('jsx!./entity-modal-specs');
+    var entityText = require('i18n!nls/entityText');
+    var ResizeSensor = require('ResizeSensor');
+    var ajax = require('ajax');
+    var UrlUtil = require('url-utility');
+    var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
+    var EntityResponse = require('entity-response');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -28,7 +30,8 @@ define(["jquery", "underscore", "datamap", "math",
         updateStateBy: function (form, beanResult, fresh) {
           fresh = !!(fresh);
           var origState = form.state;
-          var beanResponse = dm.beanResponse(beanResult);
+          var beanResponse = EntityResponse.BeanResponse.newInstance(beanResult);
+          var errors = _.extend({}, beanResult.errors);
 
           var newState = {
             beanUri : beanResult.beanUri,
@@ -36,6 +39,7 @@ define(["jquery", "underscore", "datamap", "math",
             currentAction:beanResult.action,
             actions:beanResponse.actions(),
             links:beanResponse.linksObj(),
+            errors:errors,
 
             entity : beanResult.entity
           };
@@ -49,7 +53,8 @@ define(["jquery", "underscore", "datamap", "math",
         return {
           isMain : false,
           submitHandler : null,
-          namespace : 'fns_' + Math.floor(Math.random() * 1e15) + '.'
+          namespace : 'fns_' + Math.floor(Math.random() * 1e15) + '.',
+          actionsContainerFinder : null
         };
       },
       getInitialState: function () {
@@ -60,6 +65,7 @@ define(["jquery", "underscore", "datamap", "math",
           currentAction:"",
           actions:[],
           links:[],
+          errors:{},
 
           entity:null,
           csrf : csrf
@@ -69,15 +75,18 @@ define(["jquery", "underscore", "datamap", "math",
         this.renderActions();
       },
       componentWillUnmount:function(){
+        this.unRenderActions();
       },
       componentWillUpdate:function(nextProps, nextState, nextContext, transaction){
         var $form = $(this.refs.form);
         $form.off('submit');
+        this.unRenderActions();
       },
       componentDidUpdate:function(prevProps, prevState, prevContext, rootNode){
         var $form = $(this.refs.form);
         $form.on('submit', this, this.onEventFormSubmit);
 
+        this.renderActions();
         if(this.FormActions != null){
           this.FormActions.updateStateByForm();
         }
@@ -114,9 +123,17 @@ define(["jquery", "underscore", "datamap", "math",
           return <div/>;
         var bean = this.state.entity.bean;
 
+        var errors = this.state.errors;
+        var gespan = _.map(errors.global, function(ge, i){
+          return <span className="entity-error control-label" key={i}>{ge}</span>
+        });
+        var geEle = gespan.length ? (<div className="entity-errors form-group has-error" style={{display: "block"}}>
+            {gespan}
+          </div>) : null;
+
         return (<div className="entity-form-container">
           <form ref="form" method="POST" className="twelve columns custom " action={this.state.beanUri}>
-            <div className="entity-errors form-group has-error" style={{"display": "none"}}></div>
+            {geEle}
             <div className="entity-context" style={{"display": "none"}}>
               <input type="hidden" name="timezoneOffset" value={timezoneOffset}/>
               <input type="hidden" name="ceilingType" value={entityContext.ceilingType}/>
@@ -130,16 +147,42 @@ define(["jquery", "underscore", "datamap", "math",
         </div>);
       },
       renderActions : function(){
+        this.unRenderActions();
+        var actionsContainerFinder = this.props.actionsContainerFinder || this.defaultActionsContainerFinder;
+        var div = actionsContainerFinder();
+        if(div != null){
+          var actionsEle = <TFormActions tform={this}/>;
+          var tformActions = ReactDOM.render(actionsEle, div);
+          this.FormActions = tformActions;
+        }else{
+          this.FormActions = null;
+        }
+      },
+      unRenderActions : function(){
+        var fas = this.FormActions;
+        if(fas){
+          var actionsContainerFinder = this.props.actionsContainerFinder || this.defaultActionsContainerFinder;
+          var div = actionsContainerFinder();
+          if(div != null) {
+            var unmount = ReactDOM.unmountComponentAtNode(div);
+            if(!unmount){
+              throw new Error("unmount failed");
+            }
+          }else{
+            throw new Error("FormActions not null, but div is null");
+          }
+        }
+        this.FormActions = null;
+      },
+      defaultActionsContainerFinder : function(){
         var div = null;
         if(this.props.isMain){
           div = $("#contentContainer .entity-content-breadcrumbs .tgroup")[0];
         }
         if(div == null){
-          div = ReactDOM.findDOMNode(this.refs.defaultActionsContainer);
+          div = this.refs.defaultActionsContainer;
         }
-        var actionsEle = <TFormActions tform={this}/>;
-        var tformActions = ReactDOM.render(actionsEle, div);
-        this.FormActions = tformActions;
+        return div;
       },
       onEventFormSubmit : function(event){
         var formdata = this.formData(true);
@@ -244,6 +287,7 @@ define(["jquery", "underscore", "datamap", "math",
       },
       onDeleteClick(){
         var tform = this.props.tform;
+        var isMain = tform.props.isMain;
         var entity = tform.state.entity;
         var csrf = tform.state.csrf;
         var entityContext = tform.state.entityContext;
@@ -251,28 +295,35 @@ define(["jquery", "underscore", "datamap", "math",
         var uri = new UriTemplate(this.state.links.delete).fill(idObj);
         var queryUri = this.state.links.query;
 
-        class DeleteSpec extends EMSpecs.Delete{
-          onDeleteSuccess(data, opts){
-            super.onDeleteSuccess(data, opts);
-            window.location.replace(queryUri);
-          }
-          onDeleteFail(data, opts){
-            super.onDeleteFail(data, opts);
-            console.log('Todo: Handle deleting fail');
+        var delHandler = {
+          onSuccess: function () {
           }
         }
-
-        var postBeanData = {
-          _csrf : csrf,
+        var delOpts = {
+          url : uri,
+          csrf : csrf,
           type : entityContext.type,
-          ceilingType : entityContext.ceilingType
+          ceilingType : entityContext.ceilingType,
+          successRedirect : isMain,
+          deleteExtraHandler : delHandler
         };
 
-        var ms = ModalStack.getPageStack();
-        ms.pushModalSpec(new DeleteSpec({
-          url : uri,
-          data : postBeanData
-        }));
+        require([EntityModalSpecsPath], function(EMSpecs) {
+          class DeleteSpec extends EMSpecs.Delete{
+            onDeleteSuccess(data, opts){
+              super.onDeleteSuccess(data, opts);
+              window.location.replace(queryUri);
+            }
+            onDeleteFail(data, opts){
+              super.onDeleteFail(data, opts);
+              console.log('Todo: Handle deleting fail');
+            }
+          }
+
+          var ms = ModalStack.getPageStack();
+          ms.pushModalSpec(new DeleteSpec(delOpts));
+        });
+
       },
       onSaveClick(){
         var tform = this.props.tform;
@@ -286,7 +337,6 @@ define(["jquery", "underscore", "datamap", "math",
     });
 
     function renderForm(beanResult, div, isMain){
-      var beanResponse = dm.beanResponse(beanResult);
       var formEle = <TForm isMain={isMain}/>;
 
       var tform = ReactDOM.render(formEle, div);
@@ -295,7 +345,6 @@ define(["jquery", "underscore", "datamap", "math",
 
     }
 
-    return {
-      renderForm: renderForm
-    };
+    exports.TForm = TForm;
+    exports.renderForm = renderForm;
   });

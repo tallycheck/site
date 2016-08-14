@@ -1,4 +1,4 @@
-define(["underscore", "url-parser"],
+define(['underscore', 'url-parser'],
   function (_, urlparser){
 
     var websanovaJsUrl = urlparser;

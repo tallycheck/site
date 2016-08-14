@@ -6,7 +6,7 @@ define(function (require) {
   var React =require('react'),
     ReactDom = require('react-dom'),
     menu = require('jsx!modules/menu'),
-    datamap = require("datamap");
+    datamap = require('datamap');
 
   var menuData = datamap.data("menu");
   var menuPath = datamap.data("menuPath");

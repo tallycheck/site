@@ -3,21 +3,8 @@
     <div id="gridSlot">
     </div>
 
-    <div th:include="components/entity-grid :: full_entity_grid "
-         th:with="data=${queryResult},
-       isTemplate=false,
-       scope=${scope}, alignType='window', alignOffset='50' "/>
-
-    <!--
-      <div th:include="components/entity-grid :: full_entity_grid "
-         th:with="data=${queryResult},
-         isTemplate=false,
-         scope=${scope}, alignType='window', alignOffset='50' "/>
-
-    <div th:include="components/entity-grid :: full_entity_grid (scope='main')"-->
-       <!--th:with="data=${queryResult}"/>-->
 </section>
 <div th:fragment="scripts">
     <script th:attr="data-main=@{/js/grid-page.js}"
-            th:src="@{/lib/require.js}" src="../../lib/require.js"></script>
+            th:src="@{/lib/require-full.js}" src="../../lib/require.js"></script>
 </div>

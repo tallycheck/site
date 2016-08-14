@@ -1,10 +1,14 @@
-define(["jquery", "underscore",
-    "datamap","i18n!nls/commonText",
-    "i18n!nls/entityText", 'jquery-ui',
-    'jquery-ui-timepicker'],
-  function ($, _,
-            dm, commonText,
-            entityText, jui, juitp) {
+define(
+  function(require, exports, module){
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var basic = require('basic');
+    var dm = require('datamap');
+    var commonText = require('i18n!nls/commonText');
+    var entityText = require('i18n!nls/entityText');
+    var jui = require('jquery-ui');
+    var juitp = require('jquery-ui-timepicker');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -43,7 +47,7 @@ define(["jquery", "underscore",
           var options = fi.options;
           var optionNames = fi.optionsFriendly;
           var fieldname = fi.name;
-          var fieldvalue = dm.entityProperty(this.props.bean, fieldname);
+          var fieldvalue = basic.beanProperty(this.props.bean, fieldname);
           return <span>{optionNames[fieldvalue]}</span>;
         }
       }
@@ -53,7 +57,7 @@ define(["jquery", "underscore",
 
           var fieldname = fi.name;
           var options = fi.options;
-          var fieldvalue = dm.entityProperty(this.props.bean, fieldname);
+          var fieldvalue = basic.beanProperty(this.props.bean, fieldname);
           if(fieldvalue === "" || fieldvalue === null || fieldvalue === undefined)
             return '';
           return <span>{options[fieldvalue?'t':'f']}</span>;
@@ -63,7 +67,7 @@ define(["jquery", "underscore",
         render() {
           var fi = this.props.fieldinfo;
           var fieldname = fi.name;
-          var fieldvalue = dm.entityProperty(this.props.bean, fieldname);
+          var fieldvalue = basic.beanProperty(this.props.bean, fieldname);
           if(!fieldvalue)
             return <span></span>;
           var dateVal = new Date(fieldvalue);
@@ -87,7 +91,7 @@ define(["jquery", "underscore",
         render(){
           var fi = this.props.fieldinfo;
           var fieldname = fi.name;
-          var fieldvalue = dm.entityProperty(this.props.bean, fieldname);
+          var fieldvalue = basic.beanProperty(this.props.bean, fieldname);
           if(fieldvalue == null) fieldvalue = '';
 
           var segLen = 4;
@@ -116,7 +120,7 @@ define(["jquery", "underscore",
           var fieldname = fi.name;
           var displayFieldName = fi.displayFieldName;
           var idFieldName = fi.idFieldName;
-          var fieldvalue = dm.entityProperty(bean, fieldname);
+          var fieldvalue = basic.beanProperty(bean, fieldname);
 
           if(!!fieldvalue){
             var idVal = fieldvalue[idFieldName];
@@ -136,7 +140,7 @@ define(["jquery", "underscore",
           var entityFieldName = fi.entityFieldName;
           var entityFieldDisplayProperty = fi.displayFieldName;
 
-          var fieldvalue = dm.entityProperty(bean, fieldname);
+          var fieldvalue = basic.beanProperty(bean, fieldname);
           if(!!fieldvalue) {
             var refForeignEntity = bean[entityFieldName];
             var idVal = fieldvalue;
@@ -149,7 +153,7 @@ define(["jquery", "underscore",
         }
       }
 
-      return {
+      _.extend(exports, {
         "email" : EmailCell,
         "name" : NameCell,
         'enumeration' :EnumCell,
@@ -165,7 +169,7 @@ define(["jquery", "underscore",
             CellType = this['default'];
           return CellType;
         }
-      }
+      });
     })();
 
     return Cells;

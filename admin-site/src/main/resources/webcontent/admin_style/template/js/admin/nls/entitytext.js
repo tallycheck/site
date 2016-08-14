@@ -4,10 +4,16 @@
 define({
   "root":{
     "GRID_ACTION_create":"New",
+    "GRID_ACTION_read":"View",
     "GRID_ACTION_reorder":"Reorder",
     "GRID_ACTION_update":"Edit",
     "GRID_ACTION_delete":"Delete",
     "GRID_ACTION_save":"Save",
+
+    ActionOnType : function(action, type){
+      var friendlyAction = this["GRID_ACTION_"+action];
+      return friendlyAction + " " + type;
+    },
 
     "RESET" : "Reset",
 
