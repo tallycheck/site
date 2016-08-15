@@ -256,11 +256,18 @@ define(
       filterHolders: function () {
         return basic.propertiesWithKeyPrefix(this.refs, FilterHolder.RefPrefix);
       },
-      unsetSorterExcept: function (refName) {
+      updateFilterHolderFilterVal : function(filterKey, filterVal){
         var fhs = this.filterHolders();
         _.each(fhs, function (fh) {
-          var rn = fh.props.refName;
-          if (refName != rn) {
+          if (fh.state.filterKey === filterKey) {
+            fh.setState({filterVal: filterVal});
+          }
+        });
+      },
+      unsetSorterExcept: function (filterHolder) {
+        var fhs = this.filterHolders();
+        _.each(fhs, function (fh) {
+          if (fh !== filterHolder) {
             fh.setState({sorterVal: ''});
           }
         });

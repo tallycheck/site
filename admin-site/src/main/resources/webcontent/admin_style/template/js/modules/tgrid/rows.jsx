@@ -1,13 +1,17 @@
-define(['jquery', 'underscore',
-    'jsx!./cells',
-    'datamap','math',
-    'i18n!nls/entityText'],
-  function ($, _, Cells, dm, math,
-            entityText) {
+define(
+  function(require, exports, module) {
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var basic = require('basic');
+    var Cells = require('jsx!./cells');
+    var dm = require('datamap');
+    var math = require('math');
+    var entityText = require('i18n!nls/entityText');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
 
-    var createCellContent = function(entityCtx, fieldinfo, bean, fieldvalue) {
+    var createCellContent = function (entityCtx, fieldinfo, bean, fieldvalue) {
       var props = {
         entityContext: entityCtx,
         fieldinfo: fieldinfo,
@@ -18,11 +22,11 @@ define(['jquery', 'underscore',
       return React.createElement(CellType, props);
     }
 
-    var makeCell = function(entityCtx, fieldinfo, bean){
+    var makeCell = function (entityCtx, fieldinfo, bean) {
       var fieldname = fieldinfo.name;
-      var fieldvalue = dm.entityProperty(bean, fieldname);
+      var fieldvalue = basic.beanProperty(bean, fieldname);
       var fieldVis = fieldinfo.gridVisible;
-      var fieldVisStyle = fieldVis ? {} : {display : "none"};
+      var fieldVisStyle = fieldVis ? {} : {display: "none"};
       var content = createCellContent(entityCtx, fieldinfo, bean, fieldvalue);
 
       var cell = (<td key={fieldname} style={fieldVisStyle}>{content}</td>);
@@ -30,7 +34,7 @@ define(['jquery', 'underscore',
 
     }
 
-    var makeCells = function(entityCtx, gridinfo, bean){
+    var makeCells = function (entityCtx, gridinfo, bean) {
       var fis = gridinfo.fields;
       var cells = _.map(fis, function (field, index, array) {
         var cell = makeCell(entityCtx, field, bean);
@@ -40,9 +44,9 @@ define(['jquery', 'underscore',
     }
 
     var Row = React.createClass({
-      componentDidMount:function(){
+      componentDidMount: function () {
         var body = this.props.body;
-        if(body.rowHeight ==0){
+        if (body.rowHeight == 0) {
           var node = ReactDOM.findDOMNode(this);
           var height = $(node).height();
           body.updateRowHeight(height);
@@ -71,16 +75,15 @@ define(['jquery', 'underscore',
         var text = entityText["NO_RECORDS_FOUND"];
         var span = this.props.colspan;
         var hasRec = this.props.hasRecord;
-        var style = {"display" : hasRec ? "none" : ""};
+        var style = {"display": hasRec ? "none" : ""};
         return (<tr className="empty-mark">
           <td className="entity-grid-no-results" colSpan={span} style={style}>{text}</td>
         </tr>);
       }
     });
 
-    return {
-      Row : Row,
-      PaddingRow : PaddingRow,
-      NoRecordRow : NoRecordRow
-    }
+
+    exports.Row = Row;
+    exports.PaddingRow = PaddingRow;
+    exports.NoRecordRow = NoRecordRow;
   });

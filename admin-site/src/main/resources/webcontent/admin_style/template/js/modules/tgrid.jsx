@@ -3,6 +3,7 @@ define(
 
     var $ = require('jquery');
     var _ = require('underscore');
+    var basic = require('basic');
     var dm = require('datamap');
     var math = require('math');
     var modal = require('jsx!modules/modal');
@@ -99,6 +100,8 @@ define(
             pageSize: pageSize,
             parameter: paramObj.parameter,
             cparameter: paramObj.cparameter,
+            searchField : paramObj.searchField,
+            searchKey : paramObj.searchKey,
             beansMap: beansMap
           };
           grid.setState(newState);
@@ -144,7 +147,10 @@ define(
           recordRanges:ranges,
           parameter:"",
           cparameter:"",
+          searchField : '',
+          searchKey : '',
           beansMap : beansMap,
+
           loading : false,
           csrf : csrf,
           version : this.updateVersion
@@ -214,6 +220,9 @@ define(
           console.log("GRID cparameter changed: [ '" + ps.cparameter + "' -> '" + ns.cparameter+"' ]");
           this.updateHeaderParameter(ps.cparameter, ns.cparameter);
         }
+        if((ps.searchKey) != (ns.searchKey)){
+          this.updateToolbarSearchText(ns.searchField, ps.searchKey, ns.searchKey);
+        }
         this.doResize();
         this.updateBodyMaxHeight();
         this.onVisibleRangeUpdate();
@@ -246,7 +255,7 @@ define(
         console.log("selected index changed: " + oldIndex + " -> " + newIndex);
         if(newBean){
           var idField = this.state.entityContext.idField;
-          var id = dm.beanProperty(newBean, idField);
+          var id = basic.beanProperty(newBean, idField);
           this.refs.toolbar.focuseToId('' + id);
         }else{
           this.refs.toolbar.focuseToId('');
@@ -278,6 +287,17 @@ define(
         header.setState({
           cparameter : nextCparam,
           version: this.updateVersion
+        });
+      },
+      updateToolbarSearchText : function(searchField, prevSearchText, nextSearchText) {
+        if (nextSearchText === prevSearchText)
+          return;
+        var search = this.refs.toolbar.refs.search;
+
+        search.setState({
+          searchField : searchField,
+          inputting : undefined,
+          presenting: nextSearchText
         });
       },
       onEventCreateButtonClick : function(e){

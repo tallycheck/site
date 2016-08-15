@@ -22,8 +22,10 @@ define(['jquery', 'underscore','../datamap','math',
         var gridInfo = this.props.info;
         return (
           <div className="toolbar row">
-            <Search gridInfo={gridInfo} actions={this.props.actions} links={this.props.links}/>
-            <Actions ref="actions" grid={this.props.grid} actions={this.props.actions} links={this.props.links}/>
+            <Search ref="search" gridInfo={gridInfo}
+                    grid={this.props.grid} actions={this.props.actions} links={this.props.links}/>
+            <Actions ref="actions"
+                     grid={this.props.grid} actions={this.props.actions} links={this.props.links}/>
           </div>
         );
       },
@@ -31,24 +33,74 @@ define(['jquery', 'underscore','../datamap','math',
         this.refs.actions.setState({focusingEntry: id});
       }
     });
-    var Search = React.createClass({
-      getInitialState: function () {
-        return {searchText: ""};
-      },
-      handleDelClick: function (e) {
+    class Search extends React.Component {
+      constructor(props){
+        super(props);
+        this.state = {
+          searchField : undefined,
+          inputting: undefined,
+          presenting : ''
+        };
+        this.onDeleteIconClick = this.onDeleteIconClick.bind(this);
+        this.onSearchTextKeyPress = this.onSearchTextKeyPress.bind(this);
+        this.onSearchTextChange = this.onSearchTextChange.bind(this);
+        this.onFilterClick = this.onFilterClick.bind(this);
+      }
+      displayText (){
+        if(this.state.inputting !== undefined){
+          return this.state.inputting;
+        }else{
+          return this.state.presenting;
+        }
+      }
+      onDeleteIconClick (e) {
         var inputDom = this.refs.searchInput;
         var delDom = this.refs.deleteI;
         inputDom.value = "";
         inputDom.focus();
-        this.setState({searchText: ""});
-      },
-      handleSearchTextChange: function (event) {
-        var searchText = event.target.value;
-        this.setState({searchText: searchText});
+        this.setState({inputting: ""});
+      }
+      onSearchTextChange (event) {
+        var inputting = event.target.value;
+        this.setState({inputting: inputting});
         var delDom = this.refs.deleteI;
-        var delDisplay = (!!searchText ? "block" : "none");
-      },
-      render: function () {
+        var delDisplay = (!!inputting ? "block" : "none");
+      }
+      onSearchTextKeyPress  (event) {
+        if(event.charCode == 13){
+          this.fireDoFilter();
+        }
+      }
+      onFilterClick (){
+        this.fireDoFilter();
+      }
+      fireDoFilter (){
+        var inputDom = this.refs.searchInput;
+        var val = inputDom.value;
+        var grid = this.props.grid;
+        var header = grid.refs.header;
+        var searchField = this.state.searchField;
+        header.updateFilterHolderFilterVal(searchField, val);
+      }
+      componentDidMount () {
+      }
+      componentWillUnmount () {
+      }
+      shouldComponentUpdate (nextProps, nextState, nextContext){
+        var ps = this.state;
+        var ns = nextState;
+        if(!_.isEqual(nextProps, this.props) ||
+          !_.isEqual(ns, ps) ||
+          !_.isEqual(nextContext, this.context)){
+          return true;
+        }
+        return false;
+      }
+      componentDidUpdate (prevProps, prevState) {
+        var ps = prevState;
+        var ns = this.state;
+      }
+      render () {
         var gridinfo = this.props.gridInfo;
         if (gridinfo && gridinfo.primarySearchField) {
           var searchFieldName = gridinfo.primarySearchField;
@@ -56,20 +108,24 @@ define(['jquery', 'underscore','../datamap','math',
             return f.name == searchFieldName
           });
           var searchFieldNameFriendly = (searchField != null) ? searchField.friendlyName : searchFieldName;
-          var searchText = this.state.searchText;
-          var delStyle = {"display": (!!searchText ? "block" : "none")};
+          var inputting = this.state.inputting;
+          var displayText = this.displayText();
+          var delStyle = {"display": (!!displayText ? "block" : "none")};
 
           return (
-            <div className="search-group" data-search-column={searchFieldName}>
+            <div ref="searchGroup" className="search-group" data-search-column={searchFieldName}>
               <div className="input-group">
-                <button className="btn search-btn" type="button"> <i className="fa fa-filter"></i> </button>
+                <button className="btn search-btn" type="button"
+                        onClick={this.onFilterClick}> <i className="fa fa-filter"></i> </button>
                 <span className="search-text">
                   <span className="search-input-element">
                     <i className="fa fa-search embed-hint"></i>
                     <input className="search-input" ref="searchInput" data-name={searchFieldName}
-                           placeholder={searchFieldNameFriendly} defaultValue={searchText}
-                           onChange={this.handleSearchTextChange} type="text"/>
-                    <i className="fa fa-times-circle embed-delete" ref="deleteI" onClick={this.handleDelClick}
+                           placeholder={searchFieldNameFriendly}
+                           value = {displayText}
+                           onKeyPress={this.onSearchTextKeyPress}
+                           onChange={this.onSearchTextChange} type="text"/>
+                    <i className="fa fa-times-circle embed-delete" ref="deleteI" onClick={this.onDeleteIconClick}
                        style={delStyle}></i>
                   </span>
                 </span>
@@ -80,7 +136,7 @@ define(['jquery', 'underscore','../datamap','math',
           return (<div className="search-group"/>);
         }
       }
-    });
+    };
     var Actions = React.createClass({
       getInitialState :function() {
         return {focusingEntry : ''};

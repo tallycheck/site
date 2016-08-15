@@ -115,9 +115,32 @@ define(
       splitParameter(paramStr){
         var pu = UrlUtil.ParamsUtils;
         var paramObj = pu.stringToData(paramStr);
-        var cParamKeys = EntityInfo.gridQueryKeys(this.gridInfo());
+        var gridinfo = this.gridInfo();
+        var cParamKeys = EntityInfo.gridQueryKeys(gridinfo);
         var ReservedParameter=EntityRequest.QueryUriReservedParams;
         var PersistentUrlParams = EntityRequest.QueryUriPersistentParams;
+        var primarySearchField = gridinfo.primarySearchField;
+        var primarySearchValue = '';
+        if (primarySearchField != undefined){
+          var primSearchArray = paramObj[primarySearchField];
+          if(_.isArray(primSearchArray)){
+            switch(primSearchArray.length){
+              case 0:
+                primarySearchValue = ''; break;
+              case 1:
+                primarySearchValue = primSearchArray[0]; break;
+              default:
+                throw new Error("Array size error");
+            }
+          } else if (primSearchArray === undefined){
+            primarySearchValue = '';
+          }else{
+            primarySearchValue = primSearchArray;
+          }
+          if(!_.isString(primarySearchValue)){
+            throw new Error("Type error");
+          }
+        }
 
         //build cParamObj, move property
         var cParamObj = {};
@@ -144,7 +167,9 @@ define(
         return {
           parameter : pu.dataToString(paramObj),
           cparameter : pu.dataToString(cParamObj),
-          rparameter : pu.dataToString(resvParamObj)
+          rparameter : pu.dataToString(resvParamObj),
+          searchField : primarySearchField,
+          searchKey : primarySearchValue
         }
       }
     }

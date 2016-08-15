@@ -38,60 +38,12 @@ define(
       getQueryUri:function(){
         return this.grid.state.queryUri;
       },
-      splitParameter : function(paramStr){
-        var pu = UrlUtil.ParamsUtils;
-        var paramObj = pu.stringToData(paramStr);
-        var cParamKeys = this.gatherCriteriaParameterKeys();
-
-        var cParamObj = {};
-        _.each(cParamKeys, function(ckey, index){
-          var pv = paramObj[ckey];
-          cParamObj[ckey] = pv;
-          if(pv !== undefined){
-            delete paramObj[ckey];
-          }
-        });
-
-        var resvParamObj={};
-        for(var rkeyName in ReservedParameter){
-          var rkey = ReservedParameter[rkeyName];
-          var pv = paramObj[rkey];
-          resvParamObj[rkey] = pv;
-          if(pv !== undefined){
-            if(PersistentUrlParams.indexOf(rkey) < 0){
-              delete paramObj[rkey];
-            }
-          }
-        }
-        return {
-          parameter : pu.dataToString(paramObj),
-          cparameter : pu.dataToString(cParamObj),
-          rparameter : pu.dataToString(resvParamObj)
-        }
-      },
       getParameter : function(){
         return this.grid.state.parameter;
       },
       getAllFilterHolder : function(){
         var header = this.grid.refs.header;
         return header.filterHolders();
-      },
-      gatherCriteriaParameterKeys : function(){
-        var keys = [];
-        var fhs = this.getAllFilterHolder();
-        _.each(fhs, function(fn){
-          var filter = fn.refs.filter;
-          var fi = filter.props.fieldinfo;
-          if(fi.supportSort) {
-            var sorterKey = fn.state.sorterKey;
-            keys.push(sorterKey);
-          }
-          if(fi.supportFilter) {
-            var filterKey = fn.state.filterKey;
-            keys.push(filterKey);
-          }
-        });
-        return keys;
       },
       //make parameter string: http://abc.com/xxx?a=1&b=2&b=3&c=4 (support multi-value for a particular key)
       gatherCriteriaParameter : function(includeAll){

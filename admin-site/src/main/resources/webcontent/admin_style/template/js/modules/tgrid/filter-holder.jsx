@@ -104,7 +104,7 @@ define(
         }
         console.log("holder did update: " + this.changeString(ps, ns));
         var requireUpdate = (ps.filterVal != ns.filterVal || ps.sorterVal != ns.sorterVal);
-        if(requireUpdate || this.dirty){
+        if(requireUpdate || this.dirty || ps.version == version_do_load){
           this.dirty = true;
           console.log("Fire do filter: " + this.changeString(ps, ns));
           grid.requestDoFilterByFilters(this);
@@ -136,7 +136,7 @@ define(
       onEventClickSortIcon :function (){
         var nextSortVal = Orders.calcNextOrder(this.state.sorterVal);
         var header = this.props.grid.refs.header;
-        header.unsetSorterExcept(this.props.refName);
+        header.unsetSorterExcept(this);
         // 1. trigger reload if param updated.
         this.setState({sorterVal : nextSortVal});
       },

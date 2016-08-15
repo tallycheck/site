@@ -5,6 +5,8 @@ define(
   function(require, exports, module) {
     var _ = require('underscore');
     var ajax = require('ajax');
+    var UrlUtil = require('url-utility');
+
     class ActionHandler {
 
       onSuccess(data, param) {
@@ -173,7 +175,9 @@ define(
     var QueryDefaultParam = {
       queryUri: '',
       pageSize: undefined,
-
+      parameter : '',
+      cparameter:'',
+      range:'',
     }
     class QueryHandler extends ActionHandler {
 
