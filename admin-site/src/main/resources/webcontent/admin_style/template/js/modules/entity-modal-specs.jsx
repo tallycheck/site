@@ -6,7 +6,6 @@ define(
     var BS = require('bootstrap');
     var modal = require('jsx!./modal');
     var basic = require('basic');
-    var ajax = require('ajax');
     var commonText = require('i18n!nls/commonText');
     var entityText = require('i18n!nls/entityText');
     var EntityRequest = require('entity-request');

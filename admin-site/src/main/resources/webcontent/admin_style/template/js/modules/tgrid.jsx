@@ -384,13 +384,16 @@ define(
         }
       },
       doLoadByUrl : function (url, fresh) {
-        this.ajaxLoadData(url, fresh);
+        this.ajaxLoadData({url : url}, fresh);
       },
       doLoadByFilters : function(){
-        var cparam = this.dataAccess().gatherCriteriaParameter();
-        this.setState({'cparameter' : cparam});
-        var url = this.dataAccess().buildLoadUrl();
-        this.doLoadByUrl(url, true);
+        var da = this.dataAccess();
+        var cparam = da.gatherCriteriaParameter();
+        this.setState({'cparameter' : cparam}, function(){
+          var pendingQueryParam = da.buildQueryParam();
+          var url = (new EntityRequest.QueryHandler()).buildUrl(pendingQueryParam);
+          this.doLoadByUrl(url, true);
+        });
       },
       triggerLoadPending:function(){
         var _this = this;
@@ -401,25 +404,21 @@ define(
       doLoadPending : function () {
         var da = this.dataAccess();
         var pendingRange = da.screenPendingRange();
-        var pendingUrl = (pendingRange) ? da.buildLoadUrl(pendingRange) : null;
-        var url = {
-          value : pendingUrl,
-          range : pendingRange
-        };
-        console.log("will load pending: " + pendingUrl);
-        this.ajaxLoadData(url, false);
+        if(pendingRange == null){
+          return;
+        }
+        var pendingQueryParam = da.buildQueryParam(pendingRange);
+        this.ajaxLoadData(pendingQueryParam, false);
       },
-      ajaxLoadData : function(url, fresh){
-        if(_.isObject(url)) {
-          var purl = url;
-          url = purl.value;
-          var range = purl.range;
+      ajaxLoadData : function(queryParam, fresh){
+        if(_.isObject(queryParam)) {
+          var range = queryParam.range;
           if (range) {
             var loadAlign = range.fromEnd ? (range.hi - 1) : range.lo;
             this.getSpinner().setLoadingIndex(loadAlign);
           }
         }
-        if(url == null) return;
+        if(queryParam == null) return;
         var _grid = this;
         var ffresh = (fresh === undefined) ? true : !!(fresh);
         var _args = arguments;
@@ -433,34 +432,19 @@ define(
           return false;
         }
 
-        var handlers = {
-          ondata: function (/*ondata*/ response) {
+        class QueryHandler extends EntityRequest.QueryHandler{
+          onSuccess (data, param){
+            var response = data;
             var queryResult = response.data;
             TGrid.updateStateBy(_grid, queryResult, ffresh);
-          },
-          ondataloaded : function(){
             _grid.triggerLoadPending();
           }
-        };
-        var options = {
-          url:url,
-          success:function (response) {
-            if (handlers.ondata) {
-              handlers.ondata(response);
-            }
-            if(handlers.ondataloaded){
-              handlers.ondataloaded();
-            }
-          },
-          complete:function(jqXHR, textStatus){
+          onComplete (){
             _grid.releaseLock();
             _grid.getSpinner().setLoadingIndex(null);
           }
-        };
-        var optionsclone = $.extend({}, options);
-
-        console.log("Fire url  : " + url);
-        ajax.get(options);
+        }
+        EntityRequest.query( queryParam, new QueryHandler());
       }
     });
 

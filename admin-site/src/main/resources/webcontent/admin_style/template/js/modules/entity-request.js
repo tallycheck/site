@@ -21,6 +21,10 @@ define(
         console.log("Action error");
       }
 
+      onComplete() {
+        console.log("Action complete");
+      }
+
       redirect(url) {
         if (_.isObject(url)) {
           if (url.operation == 'redirect') {
@@ -40,6 +44,14 @@ define(
     }
     exports.ActionHandler = ActionHandler;
     exports.makeActionHandler = makeActionHandler;
+
+    var PostEntityDefaultParam = {
+      url : '',
+      entityData : {}
+    };
+    class PostEntityHandler extends ActionHandler {
+    };
+
 
     var CreateReadParam = {
       url: ""
@@ -64,12 +76,45 @@ define(
         },
         error: function () {
           handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
         }
       }
       ajax(ajaxOptions);
     }
     exports.createGet = _createGet;
     exports.CreateGetHandler = CreateGetHandler;
+
+    var CreateDefaultParam = _.extend({}, PostEntityDefaultParam);
+    class CreateHandler extends PostEntityHandler {
+    }
+    var _create = function (param, handler) {
+      if (!handler instanceof CreateHandler)
+        throw new Error("Type Error");
+      var fParam = _.extend({}, CreateDefaultParam, param);
+      var ajaxOptions = {
+        url: fParam.url,
+        type: "post",
+        data: fParam.entityData,
+        success: function (data, textStatus, jqXHR, opts) {
+          if(response.success){
+            handler.onSuccess(_this, response);
+          }else{
+            handler.onFail(_this, response);
+          }
+        },
+        error: function () {
+          handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
+        }
+      };
+      ajax(ajaxOptions);
+    }
+    exports.create = _create;
+    exports.CreateHandler = CreateHandler;
 
     var ReadDefaultParam = {
       url: ""
@@ -105,12 +150,45 @@ define(
         },
         error: function () {
           handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
         }
       }
       ajax(ajaxOptions);
     }
     exports.read = _read;
     exports.ReadHandler = ReadHandler;
+
+    var UpdateDefaultParam = _.extend({}, PostEntityDefaultParam);
+    class UpdateHandler extends PostEntityHandler {
+    }
+    var _update = function (param, handler) {
+      if (!handler instanceof UpdateHandler)
+        throw new Error("Type Error");
+      var fParam = _.extend({}, UpdateDefaultParam, param);
+      var ajaxOptions = {
+        url: fParam.url,
+        type: "post",
+        data: fParam.entityData,
+        success: function (data, textStatus, jqXHR, opts) {
+          if(response.success){
+            handler.onSuccess(_this, response);
+          }else{
+            handler.onFail(_this, response);
+          }
+        },
+        error: function () {
+          handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
+        }
+      };
+      ajax(ajaxOptions);
+    }
+    exports.update = _update;
+    exports.UpdateHandler = UpdateHandler;
 
     var DeleteDefaultParam = {
       url: "",
@@ -160,6 +238,9 @@ define(
         },
         error: function () {
           handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
         }
       };
       ajax(ajaxOptions);
@@ -171,18 +252,74 @@ define(
       StartIndex: 'startIndex',
       PageSize: 'pageSize'
     };
-    var QueryUriPersistentParams = [QueryUriReservedParams.PageSize];
+    var QueryUriPersistentParams = [
+      QueryUriReservedParams.PageSize
+    ];
     var QueryDefaultParam = {
+      url : '',
+      originUrl:undefined,
       queryUri: '',
       pageSize: undefined,
       parameter : '',
-      cparameter:'',
-      range:'',
+      cparameter: '',
+      range: undefined,
     }
     class QueryHandler extends ActionHandler {
+      buildUrl(param){
+        if(!!param.url){
+          if(_.isString(param.url)) {
+            return param.url;
+          } else if (_.isFunction(param.url)){
+            return param.url();
+          }
+        }
+        var queryUrl = (param.originUrl === undefined) ? param.queryUri :
+          UrlUtil.connectUrl(param.originUrl, param.queryUri)
+        var pageSize = param.pageSize;
+        var parameter = param.parameter;
+        var cparameter = param.cparameter;
+        var range = param.range;
 
+        var allParam = UrlUtil.ParamsUtils.connect(cparameter, parameter);
+        var url = UrlUtil.getUrlWithParameterString(allParam, null, queryUrl);
+        if(range){
+          var start = range.lo; start = (start < 0)? null:start;
+          url = UrlUtil.getUrlWithParameter(QueryUriReservedParams.StartIndex, start, null, url);
+          pageSize = Math.min(range.width(), pageSize);
+        }
+        if(pageSize)
+          url = UrlUtil.getUrlWithParameter(QueryUriReservedParams.PageSize, pageSize, null, url);
+        return url;
+      }
     }
     var _query = function (param, handler) {
+      if (!handler instanceof QueryHandler)
+        throw new Error("Type Error");
+      var fParam = _.extend({}, QueryDefaultParam, param);
+      var url = handler.buildUrl(fParam);
+      if(url == null) return;
+
+      console.log("will load url: " + url);
+      var ajaxOptions = {
+        url: url,
+        type: "get",
+        success: function (data, textStatus, jqXHR, opts) {
+          if (typeof data == "object") {
+            var operation = data.operation;
+            if (operation == 'redirect') {
+            } else {
+              handler.onSuccess(data, fParam);
+            }
+          }
+        },
+        error: function () {
+          handler.onError();
+        },
+        complete:function(jqXHR, textStatus){
+          handler.onComplete();
+        }
+      }
+      ajax(ajaxOptions);
     }
     exports.query = _query;
     exports.QueryUriReservedParams = QueryUriReservedParams;

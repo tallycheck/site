@@ -13,6 +13,7 @@ define(
 
     var ReservedParameter=EntityRequest.QueryUriReservedParams;
     var PersistentUrlParams = EntityRequest.QueryUriPersistentParams;
+    var QueryHandler = EntityRequest.QueryHandler;
 
     var GridDataAccess = function(grid){
       this.grid = grid;
@@ -86,21 +87,17 @@ define(
         });
         return $(inputsWithVal).serialize();
       },
-      buildLoadUrl : function(range /* nullable */){
-        var queryUrl = UrlUtil.connectUrl(this.getOriginUrl(), this.getQueryUri())
-        var pageSize = this.getPageSize();
-        var parameter = this.getParameter();
-        var cparameter = this.gatherCriteriaParameter();
-        var allParam = UrlUtil.ParamsUtils.connect(cparameter, parameter);
-        var url = UrlUtil.getUrlWithParameterString(allParam, null, queryUrl);
-        if(range){
-          var start = range.lo; start = (start < 0)? null:start;
-          url = UrlUtil.getUrlWithParameter(ReservedParameter.StartIndex, start, null, url);
-          pageSize = Math.min(range.width(), pageSize);
-        }
-        if(pageSize)
-          url = UrlUtil.getUrlWithParameter(ReservedParameter.PageSize, pageSize, null, url);
-        return url;
+
+      buildQueryParam : function(range /* nullable */){
+        var queryParam = {
+          originUrl:this.getOriginUrl(),
+          queryUri: this.getQueryUri(),
+          pageSize: this.getPageSize(),
+          parameter : this.getParameter(),
+          cparameter: this.gatherCriteriaParameter(),
+          range: range,
+        };
+        return queryParam;
       },
       screenPendingRange :function(){
         var fullRange = this.getFullIndexRange();

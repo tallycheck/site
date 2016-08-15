@@ -14,9 +14,9 @@ define(
     //var EMSpecs = require('jsx!./entity-modal-specs');
     var entityText = require('i18n!nls/entityText');
     var ResizeSensor = require('ResizeSensor');
-    var ajax = require('ajax');
     var UrlUtil = require('url-utility');
     var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
+    var EntityRequest = require('entity-request');
     var EntityResponse = require('entity-response');
 
     var React = require('react');
@@ -189,40 +189,30 @@ define(
         var currentAction = this.state.currentAction;
         var links = this.state.links;
         var uri="";
+        var handlerBase;
+        var method;
         switch(currentAction){
           case "create":
             uri = links.self;
+            handlerBase = EntityRequest.CreateHandler;
+            method = 'create';
             break;
           case "read":
             uri = links.self;
+            handlerBase = EntityRequest.UpdateHandler;
+            method = 'update';
             break;
           default:
             throw new Error("TForm submit action not supported");
         }
 
         var _this = this;
-        var handler = _.extend({}, this.defaultSubmitHandler, this.props.submitHandler);
+        var submitParam ={url : uri, entityData : formdata};
+        class SubmitHandler extends handlerBase{
+        }
+        var handler = _.extend(new SubmitHandler(), this.defaultSubmitHandler, this.props.submitHandler);
+        EntityRequest[method](submitParam, handler);
 
-        var options ={
-          url : uri,
-          type: "post",
-          data : formdata,
-          success : function(response, textStatus, jqXHR){
-            if(response.success){
-              handler.onSuccess(_this, response);
-            }else{
-              handler.onFail(_this, response);
-            }
-          },
-          error: function( jqXHR, textStatus, errorThrown ){
-            console.log("error");
-          },
-          complete: function( jqXHR, textStatus ){
-
-          }
-        };
-
-        ajax(options);
         event.preventDefault();
       },
       defaultSubmitHandler :  {
