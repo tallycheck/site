@@ -1,6 +1,8 @@
 /**
  * Created by gaoyuan on 8/12/16.
  */
+'use strict';
+
 define(
   function(require, exports, module) {
     var _ = require('underscore');

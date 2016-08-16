@@ -1,6 +1,7 @@
 /**
  * Created by gaoyuan on 8/1/16.
  */
+'use strict';
 
 define(
   function(require, exports, module) {

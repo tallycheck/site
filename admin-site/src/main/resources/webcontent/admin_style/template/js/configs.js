@@ -23,6 +23,7 @@ requirejs.config({
     "UriTemplate" :"/lib/uri/uri-templates",
     "url-parser" : "/lib/js-url-2.3.0/url",
     "summernote" : "/lib/summernote-0.6.16/summernote.min",
+    "toastr" : "/lib/toastr-2.1.1/build/toastr.min",
 
     //modules
     "modules" : "../modules",

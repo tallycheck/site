@@ -1,3 +1,5 @@
+'use strict';
+
 define(
   function(require, exports, module) {
 
@@ -5,6 +7,7 @@ define(
     var _ = require('underscore');
     var BS = require('bootstrap');
     var modal = require('jsx!./modal');
+    var toastr = require('toastr');
     var basic = require('basic');
     var commonText = require('i18n!nls/commonText');
     var entityText = require('i18n!nls/entityText');
@@ -96,11 +99,11 @@ define(
       defaultOptions() {
         return {
           url: '',
-          createGetExtraHandler: {
-            onSuccess: undefined,
-            onFail: undefined,
-            onError: undefined,
-            onComplete: undefined,
+          createGetExtraHandler: { //compatible with ActionHandler
+            //onSuccess: function (data, param) {},
+            //onFail: function (data, param) {},
+            //onError: function () {},
+            //onComplete: function () {}
           },
           //refer to TFormSubmitHandler
           createSubmitHandler: {
@@ -212,10 +215,11 @@ define(
       defaultOptions() {
         return {
           url: '',
-          readExtraHandler: {
-            onSuccess: null,
-            onFail: null,
-            onError: null,
+          readExtraHandler: { //compatible with ActionHandler
+            //onSuccess: function (data, param) {},
+            //onFail: function (data, param) {},
+            //onError: function () {},
+            //onComplete: function () {}
           },
           //refer to TFormSubmitHandler
           updateSubmitHandler: {

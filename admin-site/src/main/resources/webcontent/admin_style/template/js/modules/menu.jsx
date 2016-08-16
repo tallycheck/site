@@ -1,6 +1,8 @@
 /**
  * Created by Gao Yuan on 2016/3/27.
  */
+'use strict';
+
 define(['jquery', 'underscore', 'i18n!nls/menutext'],
   function ($, _, menutext) {
     var React = require('react');

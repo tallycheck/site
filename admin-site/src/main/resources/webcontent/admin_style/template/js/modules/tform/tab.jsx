@@ -1,6 +1,8 @@
 /**
  * Created by gaoyuan on 8/4/16.
  */
+'use strict';
+
 define(
   function(require, exports, module){
     var $ = require('jquery');

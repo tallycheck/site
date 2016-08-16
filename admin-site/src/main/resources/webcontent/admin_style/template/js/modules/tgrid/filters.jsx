@@ -1,3 +1,5 @@
+'use strict';
+
 define(['jquery',
     'underscore',
     'i18n!nls/entityText',

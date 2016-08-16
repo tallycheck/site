@@ -1,6 +1,8 @@
 /**
  * Created by gaoyuan on 8/4/16.
  */
+'use strict';
+
 define(
   function(require, exports, module) {
 
@@ -43,19 +45,19 @@ define(
     }
     class TFormDeleteHandler {
       onSuccess(tform, response) {
-        console.log("TFormSubmitH success");
+        console.log("TForm Delete success");
       }
 
       onFail(tform, response) {
-        console.log("TFormSubmitH fail");
+        console.log("TForm Delete fail");
       }
 
       onError(tform) {
-        console.log("TFormSubmitH error");
+        console.log("TForm Delete error");
       }
 
       onComplete(tform) {
-        console.log("TFormSubmitH complete");
+        console.log("TForm Delete complete");
       }
     }
     var TForm = React.createClass({
@@ -276,7 +278,6 @@ define(
           class DeleteSpec extends EMSpecs.Delete {
             onDeleteSuccess(data, opts) {
               super.onDeleteSuccess(data, opts);
-              window.location.replace(queryUri);
             }
 
             onDeleteFail(data, opts) {
@@ -312,13 +313,12 @@ define(
             throw new Error("TForm submit action not supported");
         }
 
-        var _this = this;
         var submitParam = {url: uri, entityData: formdata};
         var handler = this.props.submitHandler;
         if (handler == null) {
           handler = _.extend(new TFormSubmitHandler(), TForm.defaultSubmitHandler);
         }
-        class SubmitHandler extends requestHandlerBase {
+        class EntityPostHandler extends requestHandlerBase {
           onSuccess(data, param) {
             handler.onSuccess(_this, data);
           }
@@ -335,7 +335,7 @@ define(
             handler.onComplete(_this);
           }
         }
-        EntityRequest[method](submitParam, new SubmitHandler());
+        EntityRequest[method](submitParam, new EntityPostHandler());
 
         event.preventDefault();
       }

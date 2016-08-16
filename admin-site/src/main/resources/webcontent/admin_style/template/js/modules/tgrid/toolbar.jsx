@@ -1,3 +1,5 @@
+'use strict';
+
 define(['jquery', 'underscore','../datamap','math',
     'i18n!nls/entityText'],
   function ($, _, dm, math,
