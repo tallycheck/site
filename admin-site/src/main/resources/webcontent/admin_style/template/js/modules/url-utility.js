@@ -1,5 +1,7 @@
-define(['underscore', 'url-parser'],
-  function (_, urlparser){
+define(
+  function(require, exports, module){
+    var _ = require('underscore');
+    var urlparser = require('url-parser');
 
     var websanovaJsUrl = urlparser;
 
@@ -103,7 +105,7 @@ define(['underscore', 'url-parser'],
       },
       getParameter:function(url) {
         url = url || window.location.href;
-        return websanovaJsUrl('?', url);
+        return websanovaJsUrl('query', url);
       },
       getParametersObject : function(url) {
         return this.ParamsUtils.stringToData(this.getParameter(url));
@@ -187,5 +189,5 @@ define(['underscore', 'url-parser'],
 
     Url.HistoryUtility = History;
 
-    return Url;
+    _.extend(exports, Url);
   });

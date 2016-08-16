@@ -5,6 +5,7 @@ define(
   function(require, exports, module) {
     var _ = require('underscore');
     var ajax = require('ajax');
+    var Debugger = require('debugger');
     var UrlUtil = require('url-utility');
 
     class ActionHandler {
@@ -36,24 +37,16 @@ define(
         }
       }
     }
-    var makeActionHandler = function (handlerObj, type) {
-      if (type === undefined) type = ActionHandler;
-      var handler = new type();
-      _.extend(handler, handlerObj);
-      return handler;
-    }
     exports.ActionHandler = ActionHandler;
-    exports.makeActionHandler = makeActionHandler;
 
     var PostEntityDefaultParam = {
-      url : '',
-      entityData : {}
+      url: '',
+      entityData: {}
     };
     class PostEntityHandler extends ActionHandler {
-    };
+    }
 
-
-    var CreateReadParam = {
+    var CreateReadDefaultParam = {
       url: ""
     }
     class CreateGetHandler extends ActionHandler {
@@ -61,23 +54,22 @@ define(
     var _createGet = function (param, handler) {
       if (!handler instanceof CreateGetHandler)
         throw new Error("Type Error");
-      var fParam = _.extend({}, CreateReadParam, param);
+      var fParam = _.extend({}, CreateReadDefaultParam, param);
       var ajaxOptions = {
         url: fParam.url,
         type: "get",
         success: function (data, textStatus, jqXHR, opts) {
-          if (typeof data == "object") {
-            var operation = data.operation;
-            if (operation == 'redirect') {
-            } else {
-              handler.onSuccess(data, fParam);
-            }
+          var response = data;
+          if (response.success) {
+            handler.onSuccess(response, fParam);
+          } else {
+            handler.onFail(response, fParam);
           }
         },
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
+        complete: function (jqXHR, textStatus) {
           handler.onComplete();
         }
       }
@@ -98,16 +90,17 @@ define(
         type: "post",
         data: fParam.entityData,
         success: function (data, textStatus, jqXHR, opts) {
-          if(response.success){
-            handler.onSuccess(_this, response);
-          }else{
-            handler.onFail(_this, response);
+          var response = data;
+          if (response.success) {
+            handler.onSuccess(response, fParam);
+          } else {
+            handler.onFail(response, fParam);
           }
         },
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
+        complete: function (jqXHR, textStatus) {
           handler.onComplete();
         }
       };
@@ -140,18 +133,17 @@ define(
         url: fParam.url,
         type: "get",
         success: function (data, textStatus, jqXHR, opts) {
-          if (typeof data == "object") {
-            var operation = data.operation;
-            if (operation == 'redirect') {
-            } else {
-              handler.onSuccess(data, fParam);
-            }
+          var response = data;
+          if (response.success) {
+            handler.onSuccess(response, fParam);
+          } else {
+            handler.onFail(response, fParam);
           }
         },
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
+        complete: function (jqXHR, textStatus) {
           handler.onComplete();
         }
       }
@@ -172,16 +164,17 @@ define(
         type: "post",
         data: fParam.entityData,
         success: function (data, textStatus, jqXHR, opts) {
-          if(response.success){
-            handler.onSuccess(_this, response);
-          }else{
-            handler.onFail(_this, response);
+          var response = data;
+          if (response.success) {
+            handler.onSuccess(response, fParam);
+          } else {
+            handler.onFail(response, fParam);
           }
         },
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
+        complete: function (jqXHR, textStatus) {
           handler.onComplete();
         }
       };
@@ -209,6 +202,11 @@ define(
       onError() {
         console.log("Delete error");
       }
+
+      onComplete() {
+        console.log("Delete complete");
+      }
+
     }
     var _delete = function (param, handler) {
       if (!handler instanceof DeleteHandler)
@@ -239,7 +237,7 @@ define(
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
+        complete: function (jqXHR, textStatus) {
           handler.onComplete();
         }
       };
@@ -256,20 +254,20 @@ define(
       QueryUriReservedParams.PageSize
     ];
     var QueryDefaultParam = {
-      url : '',
-      originUrl:undefined,
+      url: '',
+      originUrl: undefined,
       queryUri: '',
       pageSize: undefined,
-      parameter : '',
+      parameter: '',
       cparameter: '',
       range: undefined,
     }
     class QueryHandler extends ActionHandler {
-      buildUrl(param){
-        if(!!param.url){
-          if(_.isString(param.url)) {
+      buildUrl(param) {
+        if (!!param.url) {
+          if (_.isString(param.url)) {
             return param.url;
-          } else if (_.isFunction(param.url)){
+          } else if (_.isFunction(param.url)) {
             return param.url();
           }
         }
@@ -282,12 +280,13 @@ define(
 
         var allParam = UrlUtil.ParamsUtils.connect(cparameter, parameter);
         var url = UrlUtil.getUrlWithParameterString(allParam, null, queryUrl);
-        if(range){
-          var start = range.lo; start = (start < 0)? null:start;
+        if (range) {
+          var start = range.lo;
+          start = (start < 0) ? null : start;
           url = UrlUtil.getUrlWithParameter(QueryUriReservedParams.StartIndex, start, null, url);
-          pageSize = Math.min(range.width(), pageSize);
+//          pageSize = Math.min(range.width(), pageSize);
         }
-        if(pageSize)
+        if (pageSize)
           url = UrlUtil.getUrlWithParameter(QueryUriReservedParams.PageSize, pageSize, null, url);
         return url;
       }
@@ -297,26 +296,25 @@ define(
         throw new Error("Type Error");
       var fParam = _.extend({}, QueryDefaultParam, param);
       var url = handler.buildUrl(fParam);
-      if(url == null) return;
+      if (url == null) return;
 
       console.log("will load url: " + url);
       var ajaxOptions = {
         url: url,
         type: "get",
         success: function (data, textStatus, jqXHR, opts) {
-          if (typeof data == "object") {
-            var operation = data.operation;
-            if (operation == 'redirect') {
-            } else {
-              handler.onSuccess(data, fParam);
-            }
+          var response = data;
+          if (response.success) {
+            handler.onSuccess(response, fParam);
+          } else {
+            handler.onFail(response, fParam);
           }
         },
         error: function () {
           handler.onError();
         },
-        complete:function(jqXHR, textStatus){
-          handler.onComplete();
+        complete: function (jqXHR, textStatus) {
+          handler.onComplete(fParam);
         }
       }
       ajax(ajaxOptions);

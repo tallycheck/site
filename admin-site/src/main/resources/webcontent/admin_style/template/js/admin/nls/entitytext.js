@@ -27,6 +27,8 @@ define({
         return "" + (range.lo + 1) + " - " + range.hi + " of " + total + " records"
     },
 
-    "FieldForeignKeyNotSelected":"(No value selected)"
+    "FieldForeignKeyNotSelected":"(No value selected)",
+
+    readFailed : "Read Failed"
   }
 });

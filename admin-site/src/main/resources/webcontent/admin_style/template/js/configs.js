@@ -31,6 +31,7 @@ requirejs.config({
     "ajax" : "/js/modules/ajax",
     "url-utility" : "/js/modules/url-utility",
     "basic" :"/js/modules/basic",
+    "debugger" :"/js/modules/debugger",
 
     "entity-info" :"/js/modules/entity-info",
     "entity-request" :"/js/modules/entity-request",

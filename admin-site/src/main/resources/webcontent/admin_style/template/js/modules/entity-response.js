@@ -92,9 +92,10 @@ define(
       }
     }
     class QueryResponse extends EntityResponseBase {
-      static newInstance(data){
+      static newInstance(data) {
         return new QueryResponse(data);
       }
+
       constructor(data) {
         super(data);
         this._entities = new UnifiedEntities(this.data.entities);
@@ -112,64 +113,54 @@ define(
         return this._entities;
       }
 
-      splitParameter(paramStr){
+      splitParameter(fullQueryUri) {
         var pu = UrlUtil.ParamsUtils;
-        var paramObj = pu.stringToData(paramStr);
+        var fullParamObj = UrlUtil.getParametersObject(fullQueryUri);
         var gridinfo = this.gridInfo();
         var cParamKeys = EntityInfo.gridQueryKeys(gridinfo);
-        var ReservedParameter=EntityRequest.QueryUriReservedParams;
-        var PersistentUrlParams = EntityRequest.QueryUriPersistentParams;
+        var ReservedUriQueryKeys = _.values(EntityRequest.QueryUriReservedParams);
+        var PersistentUrlQueryKeys = _.values(EntityRequest.QueryUriPersistentParams);
         var primarySearchField = gridinfo.primarySearchField;
         var primarySearchValue = '';
-        if (primarySearchField != undefined){
-          var primSearchArray = paramObj[primarySearchField];
-          if(_.isArray(primSearchArray)){
-            switch(primSearchArray.length){
+        if (primarySearchField != undefined) {
+          var primSearchArray = fullParamObj[primarySearchField];
+          if (_.isArray(primSearchArray)) {
+            switch (primSearchArray.length) {
               case 0:
-                primarySearchValue = ''; break;
+                primarySearchValue = '';
+                break;
               case 1:
-                primarySearchValue = primSearchArray[0]; break;
+                primarySearchValue = primSearchArray[0];
+                break;
               default:
                 throw new Error("Array size error");
             }
-          } else if (primSearchArray === undefined){
+          } else if (primSearchArray === undefined) {
             primarySearchValue = '';
-          }else{
+          } else {
             primarySearchValue = primSearchArray;
           }
-          if(!_.isString(primarySearchValue)){
+          if (!_.isString(primarySearchValue)) {
             throw new Error("Type error");
           }
         }
 
         //build cParamObj, move property
-        var cParamObj = {};
-        cParamKeys.forEach(function(ckey, index){
-          var pv = paramObj[ckey];
-          cParamObj[ckey] = pv;
-          if(pv !== undefined){
-            delete paramObj[ckey];
-          }
-        });
+        var cParamObj = _.pick(fullParamObj, cParamKeys);
+        var paramObj = _.omit(fullParamObj, cParamKeys);
 
         //build resvParamObj
-        var resvParamObj={};
-        for(var rkeyName in ReservedParameter){
-          var rkey = ReservedParameter[rkeyName];
-          var pv = paramObj[rkey];
-          resvParamObj[rkey] = pv;
-          if(pv !== undefined){
-            if(PersistentUrlParams.indexOf(rkey) < 0){
-              delete paramObj[rkey];
-            }
-          }
-        }
+        var resvParamObj = _.pick(paramObj, ReservedUriQueryKeys);
+        paramObj = _.omit(paramObj, ReservedUriQueryKeys);
+        var perParamObj = _.pick(resvParamObj, PersistentUrlQueryKeys);
+        _.extend(paramObj, perParamObj);
+
         return {
-          parameter : pu.dataToString(paramObj),
-          cparameter : pu.dataToString(cParamObj),
-          rparameter : pu.dataToString(resvParamObj),
-          searchField : primarySearchField,
-          searchKey : primarySearchValue
+          parameter: pu.dataToString(paramObj),
+          cparameter: pu.dataToString(cParamObj),
+          rparameter: pu.dataToString(resvParamObj),
+          searchField: primarySearchField,
+          searchKey: primarySearchValue
         }
       }
     }
@@ -190,9 +181,10 @@ define(
       }
     }
     class BeanResponse extends EntityResponseBase {
-      static newInstance(data){
+      static newInstance(data) {
         return new BeanResponse(data);
       }
+
       constructor(data) {
         super(data);
         var entityCtx = this.entityContext();
@@ -221,6 +213,4 @@ define(
 
     exports.QueryResponse = QueryResponse;
     exports.BeanResponse = BeanResponse;
-
-
   });

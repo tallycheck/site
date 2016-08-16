@@ -12,8 +12,8 @@ define(
 
     var Orders = TFilters.Orders;
 
-    var version_do_load = -1;
-    var version_init = -2;
+    var version_init = -1;
+    var version_do_load = -2;
     var FilterHolder = React.createClass({
       statics : {
         RefPrefix : "filterholder.",
@@ -73,6 +73,9 @@ define(
       shouldComponentUpdate:function(nextProps, nextState, nextContext){
         var ps = this.state;
         var ns = nextState;
+        if(ps.version == version_init){
+          return true;
+        }
         if(ps.version != ns.version)
           this.dirty = false;
         var oldState = _.extend({}, ps, {version:0});
@@ -91,13 +94,14 @@ define(
         var grid = this.props.grid;
         var ps = prevState;
         var ns = this.state;
-        if(ps.filterShown && !(ns.filterShown)){
+        if(ps.filterShown && !(ns.filterShown)) {
           //close
           var filter = this.refs.filter;
           var pParam = ps.filterVal;
           var param = filter.getParam();
-          if(pParam != param)
-            this.setState({filterVal : param, version:version_do_load});
+          if (pParam != param) {
+            this.setState({filterVal: param, version: version_do_load});
+          }
         }
         if(ps.version == version_init){
           return;

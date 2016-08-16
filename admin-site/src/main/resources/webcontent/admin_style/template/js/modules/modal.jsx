@@ -47,12 +47,12 @@ define(
       getGenericFooter(positive, negative, close) {
         var posBtn = positive ?
           <button type="button" className="btn btn-default btn-positive" onClick={this.onPositiveButtonClick}>
-            ok</button> : <span/>;
+            {commonText.ok}</button> : <span/>;
         var negBtn = negative ?
           <button type="button" className="btn btn-default btn-negative" onClick={this.onNegativeButtonClick}
-                  data-dismiss="modal">cancel</button> : <span/>;
+                  data-dismiss="modal">{commonText.cancel}</button> : <span/>;
         var closeBtn = close ?
-          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">close</button> : <span/>;
+          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">{commonText.close}</button> : <span/>;
         var div = ( <div>
           {posBtn}
           {negBtn}
@@ -371,6 +371,7 @@ define(
         }
       }
     });
+
 
     exports.ModalStack = ModalStack;
     exports.ModalSpecBase = ModalSpecBase;

@@ -161,6 +161,7 @@ define(
       }
     });
 
+    var version_init = -1;
     var Header = React.createClass({
       getDefaultProps: function () {
         return {
@@ -172,7 +173,7 @@ define(
         return {
           cparameter: "",
           sorter: '',
-          version: -1
+          version: version_init
         };
       },
       componentDidMount: function () {
@@ -182,6 +183,9 @@ define(
       shouldComponentUpdate: function (nextProps, nextState, nextContext) {
         var ps = this.state;
         var ns = nextState;
+        if(ps.version == version_init){
+          return true;
+        }
         var oldState = _.extend({}, ps, {version: 0});
         var newState = _.extend({}, ns, {version: 0});
         if (!_.isEqual(nextProps, this.props) || !_.isEqual(newState, oldState) || !_.isEqual(nextContext, this.context)) {
@@ -190,7 +194,10 @@ define(
         return false;
       },
       componentDidUpdate: function (prevProps, prevState) {
-        if ((prevState.cparameter) != (this.state.cparameter)) {
+        var ps = prevState;
+        var ns = this.state;
+
+        if ((ps.cparameter != ns.cparameter) || (ps.version == version_init)) {
           var cparam = this.state.cparameter;
           var version = this.state.version;
           var paramObj = UrlUtil.ParamsUtils.stringToData(cparam);

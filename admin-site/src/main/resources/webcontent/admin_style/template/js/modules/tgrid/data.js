@@ -99,6 +99,11 @@ define(
         };
         return queryParam;
       },
+      buildUrl : function(range /* nullable */){
+        var queryParam = this.buildQueryParam(range);
+        var url = (new EntityRequest.QueryHandler()).buildUrl(queryParam);
+        return url;
+      },
       screenPendingRange :function(){
         var fullRange = this.getFullIndexRange();
         var visibleRange = this.getVisibleRange();
