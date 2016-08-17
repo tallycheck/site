@@ -9,15 +9,18 @@ define(
 
     var UrlParamsUtils = {
       stringToData : function (paramsStr, keepEmpty /*keep keys with null value*/) {
-        var obj = {};
         keepEmpty = (keepEmpty == undefined ? false : !!keepEmpty);
-        for (var member in obj) delete obj[member];
-        if((paramsStr == null) || (paramsStr == '')){return obj;}
+        if((paramsStr == null) || (paramsStr == '')){
+          return {};
+        }
+        var obj = {};
         var pathAndParam = paramsStr.split('?');
         var params = (pathAndParam.length == 2)?pathAndParam[1]:pathAndParam[0];
         var pairs = params.split('&');
-        pairs.forEach(function(pair, i, array){
-          var kv = pair.split('='); var k = kv[0]; var v = kv[1];
+        _.each(pairs, function(pair, i, array){
+          var kv = pair.split('=');
+          var k = kv[0];
+          var v = kv[1];
           if(keepEmpty || (v != '')){
             if(obj[k] == undefined){obj[k] = [];}
             if(v != ''){obj[k].push(v);}
@@ -27,15 +30,17 @@ define(
       },
       dataToString : function (obj, includeEmpty) {
         var paramsUrl ='';
-        var pairs = [];
-        for(k in obj){
-          var vs = obj[k];
+
+        var objProps = _.pairs(obj);
+        var pairs = _.flatten(_.map(objProps, function(objProp){
+          var k = objProp[0];
+          var vs = objProp[1];
+          var sameKeyPairs = [];
           if(includeEmpty || vs){
-            vs.forEach(function(v, i){
-              pairs.push(''+k+'='+v);
-            });
+            sameKeyPairs = _.map(vs, function(v){return ''+k+'='+v;});
           }
-        }
+          return sameKeyPairs;
+        }))
         return pairs.join('&');
       },
       addValue : function (obj, k, v) {
@@ -47,7 +52,7 @@ define(
       },
       hasKey : function (obj, k) {
         var v = obj[k];
-        return ($.isArray(v)) && (v.length > 0);
+        return (_.isArray(v)) && (v.length > 0);
       },
       deleteKey : function (obj, k) {
         delete obj[k];
@@ -58,26 +63,26 @@ define(
        * @param paramObj
        */
       removeDuplicates : function (obj) {
-        for(k in obj){
-          var vs = obj[k]; var vo ={}; var ovs=[];
-          vs.forEach(function (v, i) {vo[v]=0;})
-          for(v in vo){ovs.push(v);}
+        for(let k in obj){
+          var vs = obj[k];
+          var ovs=_.uniq(vs);
           obj[k]=ovs;
         }
       },
       merge : function(/* arguments in strings or objects*/){
         var merged ={};
-        for(i=0;i<arguments.length;i++){
-          var obj = arguments[i];
-          if(typeof obj == 'string'){
+        _.each(arguments, function(obj){
+          if(_.isString(obj)){
             obj = UrlParams.stringToData(obj);
           }
-          if(!!obj){
-            for(k in obj){
-              var vs = obj[k]; var mvs = merged[k];
+          if(_.isObject(obj)){
+            for(let k in obj){
+              var vs = obj[k];
+              var mvs = merged[k];
               merged[k] = ((!!mvs)? (mvs.concat(vs)) : ([].concat(vs)));
-            }}
-        }
+            }
+          }
+        })
         this.removeDuplicates(merged);
         return merged;
       },
@@ -88,11 +93,11 @@ define(
     };
 
     var Url={
-      ParamsUtils: $.extend({}, UrlParamsUtils, {
+      ParamsUtils: _.extend({}, UrlParamsUtils, {
         connect:function(){
           //var merged  =Array.prototype.slice.call(arguments);
           var merged =[];
-          for(i=0;i<arguments.length;i++){
+          for(let i=0;i<arguments.length;i++){
             var node = arguments[i];
             if(node){//ignore empty
               merged.push(node);
@@ -137,8 +142,8 @@ define(
           UrlParamsUtils.deleteKey(newParamObj, param);
         } else {
           // Update the desired parameter to its new value
-          if ($.isArray(param)) {
-            $(param).each(function(index, param) {
+          if (_.isArray(param)) {
+            _(param).each(function(index, param) {
               var k = param[index]; var v = value[index];
               UrlParamsUtils.setValue(newParamObj,k,v);
             });

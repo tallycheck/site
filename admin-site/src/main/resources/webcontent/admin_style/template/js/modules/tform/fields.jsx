@@ -299,16 +299,16 @@ define(
         doRender(){
           var holder = this.props.holder;
           var bean = holder.bean;
-          var noneSpan = (<span className="display-value-none-selected" style={{display: inline}}>{entityText.FieldForeignKeyNotSelected}</span>);
+          var noneSpan = (<span className="display-value-none-selected" style={{display: "inline"}}>{entityText.FieldForeignKeyNotSelected}</span>);
 
           return (<div className="foreign-key-value-container" data-entity-type="" data-id-field="" data-display-field="">
             {noneSpan}
-            <span className="display-value read-only" style="display: none;"></span>
-            <i className="fa fa-times-circle entity-btn drop-entity" style="display: none;"></i>
+            <span className="display-value read-only" style={{display: "none"}}></span>
+            <i className="fa fa-times-circle entity-btn drop-entity" style={{display: "none"}}></i>
             <button className="btn btn-default btn-sm entity-btn to-one-lookup tiny radius secondary button hover-cursor" type="button" data-select-url="">
               <i className="fa fa-search"></i>Lookup
             </button>
-            <span className="external-link-container" style="display: none;">
+            <span className="external-link-container" style={{display: "none"}}>
                <a className="entity-form-modal-view" data-foreign-key-link="" href="">
                  <i className="fa fa-external-link"></i>
                </a>

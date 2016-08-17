@@ -13,6 +13,7 @@ define(
     var modal = require('jsx!modules/modal');
     var UriTemplate = require('UriTemplate');
     var TFormTabs = require('jsx!./tform/tab');
+    var TFormActionsComp = require('jsx!./tform/actions');
     //var EMSpecs = require('jsx!./entity-modal-specs');
     var entityText = require('i18n!nls/entityText');
     var ResizeSensor = require('ResizeSensor');
@@ -24,6 +25,7 @@ define(
     var React = require('react');
     var ReactDOM = require('react-dom');
     var TabContainer = TFormTabs.TabContainer;
+    var TFormActions = TFormActionsComp.TFormActions;
     var ModalStack = modal.ModalStack;
 
     class TFormSubmitHandler {
@@ -60,72 +62,41 @@ define(
         console.log("TForm Delete complete");
       }
     }
-    var TForm = React.createClass({
-      FormActions: null,
-      statics: {
-        updateStateBy: function (form, beanResult, fresh) {
-          fresh = !!(fresh);
-          var origState = form.state;
-          var beanResponse = EntityResponse.BeanResponse.newInstance(beanResult);
-          var errors = _.extend({}, beanResult.errors);
+    var TFormDefaultProps = {
+      isMain: false,
+      submitHandler: null,
+      deleteHandler: null,
+      actionsContainerFinder: null
+    }
+    class TForm extends React.Component {
+      static updateStateBy(form, beanResult, fresh) {
+        fresh = !!(fresh);
+        var origState = form.state;
+        var beanResponse = EntityResponse.BeanResponse.newInstance(beanResult);
+        var errors = _.extend({}, beanResult.errors);
 
-          var newState = {
-            beanUri: beanResult.beanUri,
-            entityContext: beanResponse.entityContext(),
-            currentAction: beanResult.action,
-            actions: beanResponse.actions(),
-            links: beanResponse.linksObj(),
-            errors: errors,
+        var newState = {
+          beanUri: beanResult.beanUri,
+          entityContext: beanResponse.entityContext(),
+          currentAction: beanResult.action,
+          actions: beanResponse.actions(),
+          links: beanResponse.linksObj(),
+          errors: errors,
 
-            entity: beanResult.entity
-          };
-          form.setState(newState);
-        },
-        defaultSubmitHandler: {
-          onSuccess: function (tform, response) {
-            console.log("success");
-          },
-          onFail: function (tform, response) {
-            TForm.updateStateBy(tform, response.data);
-            console.log("fail");
-          },
-          onError: function (tform) {
-            console.log("error");
-          },
-          onComplete: function (tform) {
-            console.log("complete");
-          }
-        },
-        defaultDeleteHandler: {
-          onSuccess: function (tform, response) {
-            console.log("success");
-          },
-          onFail: function (tform, response) {
-            console.log("fail");
-          },
-          onError: function (tform) {
-            console.log("error");
-          },
-          onComplete: function (tform) {
-            console.log("complete");
-          }
-        },
-        csrf: function () {
-          return $("form[name=formtemplate] input[name=_csrf]").val();
-        }
-      },
-      getDefaultProps: function () {
-        return {
-          isMain: false,
-          submitHandler: null,
-          deleteHandler: null,
-          namespace: 'fns_' + Math.floor(Math.random() * 1e15) + '.',
-          actionsContainerFinder: null
+          entity: beanResult.entity
         };
-      },
-      getInitialState: function () {
+        form.setState(newState);
+      }
+      static csrf() {
+        return $("form[name=formtemplate] input[name=_csrf]").val();
+      }
+
+      constructor(props) {
+        super(props);
         var csrf = TForm.csrf();
-        return {
+        this.state = {
+          namespace: 'fns_' + Math.floor(Math.random() * 1e15) + '.',
+
           beanUri: "",
           entityContext: undefined,
           currentAction: "",
@@ -136,19 +107,26 @@ define(
           entity: null,
           csrf: csrf
         };
-      },
-      componentDidMount: function () {
+
+        this.defaultActionsContainerFinder = this.defaultActionsContainerFinder.bind(this);
+        this.FormActions = null
+      }
+
+      componentDidMount() {
         this.renderActions();
-      },
-      componentWillUnmount: function () {
+      }
+
+      componentWillUnmount() {
         this.unRenderActions();
-      },
-      componentWillUpdate: function (nextProps, nextState, nextContext, transaction) {
+      }
+
+      componentWillUpdate(nextProps, nextState, nextContext, transaction) {
         var $form = $(this.refs.form);
         $form.off('submit');
         this.unRenderActions();
-      },
-      componentDidUpdate: function (prevProps, prevState, prevContext, rootNode) {
+      }
+
+      componentDidUpdate(prevProps, prevState, prevContext, rootNode) {
         var $form = $(this.refs.form);
         $form.on('submit', this, this.onEventFormSubmit);
 
@@ -156,8 +134,9 @@ define(
         if (this.FormActions != null) {
           this.FormActions.updateStateByForm();
         }
-      },
-      formData: function (includeAll) {
+      }
+
+      formData(includeAll) {
         var paramsObj = {};
         var $form = $(this.refs.form);
         var $gInputs = $form.find('input:not(.entity-box input)');
@@ -179,8 +158,9 @@ define(
         });
         paramsObj.bean = bean;
         return paramsObj;
-      },
-      render: function () {
+      }
+
+      render() {
         var csrf = this.state.csrf;
         var timezoneOffset = (new Date()).getTimezoneOffset();
         var entityContext = this.state.entityContext;
@@ -212,8 +192,9 @@ define(
             <input type="hidden" name="_csrf" value={csrf}/>
           </form>
         </div>);
-      },
-      renderActions: function () {
+      }
+
+      renderActions() {
         this.unRenderActions();
         var actionsContainerFinder = this.props.actionsContainerFinder || this.defaultActionsContainerFinder;
         var div = actionsContainerFinder();
@@ -224,8 +205,9 @@ define(
         } else {
           this.FormActions = null;
         }
-      },
-      unRenderActions: function () {
+      }
+
+      unRenderActions() {
         var fas = this.FormActions;
         if (fas) {
           var actionsContainerFinder = this.props.actionsContainerFinder || this.defaultActionsContainerFinder;
@@ -240,8 +222,9 @@ define(
           }
         }
         this.FormActions = null;
-      },
-      defaultActionsContainerFinder: function () {
+      }
+
+      defaultActionsContainerFinder() {
         var div = null;
         if (this.props.isMain) {
           div = $("#contentContainer .entity-content-breadcrumbs .tgroup")[0];
@@ -250,8 +233,9 @@ define(
           div = this.refs.defaultActionsContainer;
         }
         return div;
-      },
-      onFireDelete : function(){
+      }
+
+      onFireDelete() {
         var tform = this;
         var isMain = tform.props.isMain;
         var entity = tform.state.entity;
@@ -289,8 +273,9 @@ define(
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new DeleteSpec(delOpts));
         });
-      },
-      onEventFormSubmit: function (event) {
+      }
+
+      onEventFormSubmit(event) {
         var _this = this;
         var formdata = this.formData(true);
         var currentAction = this.state.currentAction;
@@ -339,73 +324,38 @@ define(
 
         event.preventDefault();
       }
-    });
-
-    var TFormActionsDefaultProps = {
-      tform: null,
     }
-    class TFormActions extends React.Component {
-      constructor(props) {
-        super(props);
-        this.state = {
-          actions: [],
-          links: {},
-          lock: false,
-          dirty: false,
-          saving: false
-        };
-        this.onSaveClick = this.onSaveClick.bind(this);
-        this.onDeleteClick = this.onDeleteClick.bind(this);
-      }
+    TForm.defaultProps = TFormDefaultProps;
 
-      updateStateByForm() {
-        var tform = this.props.tform;
-        this.setState({
-          actions: tform.state.actions,
-          links: tform.state.links,
-        });
-      }
-
-      render() {
-        var actions = this.state.actions;
-        var deleteAction = "delete";
-        var saveAction = "save";
-        var showDelete = _.indexOf(actions, deleteAction) >= 0;
-        var showSave = _.indexOf(actions, saveAction) >= 0;
-        var deleteEle = showDelete ? (<button type="button" className="btn btn-default action-control entity-action"
-                                              data-action={deleteAction} style={{display: "inline-block"}}
-                                              onClick={this.onDeleteClick}>
-          <span className="fa fa-times" aria-hidden="true"></span>{entityText.GRID_ACTION_delete}
-        </button>) : <div/>;
-        var spinnerStyle = {display: this.state.saving ? "block" : "none"};
-        var saveEle = showSave ? (<div className="action-control entity-action submit-entity"
-                                       data-action={saveAction} data-action-url="" disabled={!this.state.dirty}
-                                       style={{display: "inline-block"}}>
-            <button type="button" className="btn btn-default" onClick={this.onSaveClick}>
-              <span className="fa fa-floppy-o" aria-hidden="true"></span>{entityText.GRID_ACTION_save}
-            </button>
-            <span className="spinner" style={spinnerStyle}><i className="fa fa-spin fa-circle-o-notch"></i></span>
-          </div>
-        ) : <div/>;
-
-        return (<div className="action-group" style={{display: "block"}}>
-          {deleteEle}
-          {saveEle}
-        </div>);
-      }
-
-      onDeleteClick() {
-        var tform = this.props.tform;
-        tform.onFireDelete();
-      }
-
-      onSaveClick() {
-        var tform = this.props.tform;
-        var form = tform.refs.form;
-        $(form).submit();
+    TForm.defaultSubmitHandler = {
+      onSuccess: function (tform, response) {
+        console.log("success");
+      },
+      onFail: function (tform, response) {
+        TForm.updateStateBy(tform, response.data);
+        console.log("fail");
+      },
+      onError: function (tform) {
+        console.log("error");
+      },
+      onComplete: function (tform) {
+        console.log("complete");
       }
     }
-    TFormActions.defaultProps = TFormActionsDefaultProps;
+    TForm.defaultDeleteHandler = {
+      onSuccess: function (tform, response) {
+        console.log("success");
+      },
+      onFail: function (tform, response) {
+        console.log("fail");
+      },
+      onError: function (tform) {
+        console.log("error");
+      },
+      onComplete: function (tform) {
+        console.log("complete");
+      }
+    }
 
     function renderForm(beanResult, div, isMain) {
       var formEle = <TForm isMain={isMain}/>;

@@ -227,7 +227,7 @@ define(
         success: function (data, textStatus, jqXHR, opts) {
           if (typeof data == "object") {
             if (data.success) {
-              if (param.successRedirect) {
+              if (fparam.successRedirect) {
                 handler.redirect(data);
               }
               handler.onSuccess(data, fParam);

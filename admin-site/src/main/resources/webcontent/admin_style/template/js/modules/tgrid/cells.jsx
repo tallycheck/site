@@ -6,13 +6,16 @@ define(
     var _ = require('underscore');
     var basic = require('basic');
     var dm = require('datamap');
+    var modal = require('jsx!modules/modal');
     var commonText = require('i18n!nls/commonText');
     var entityText = require('i18n!nls/entityText');
     var jui = require('jquery-ui');
     var juitp = require('jquery-ui-timepicker');
+    var ModalStack = modal.ModalStack;
 
     var React = require('react');
     var ReactDOM = require('react-dom');
+    var EntityModalSpecsPath = 'jsx!../entity-modal-specs';
 
     var Cells = (function(){
       class CellBase extends React.Component {
@@ -116,7 +119,32 @@ define(
         }
       }
       class ForeignKeyCell extends CellBase{
-        render(){
+        constructor(props){
+          super(props);
+          this.onPopLinkClick = this.onPopLinkClick.bind(this);
+        }
+        onPopLinkClick(e){
+          var url = this.refs.a.href;
+          require([EntityModalSpecsPath], function (EMSpecs) {
+            var FormSubmitHandler = {
+            }
+            var FormSubmitModalHandler = {
+              onSuccess(modal, tform, response){
+                modal.hide();
+              }
+            }
+            class ReadSpec extends EMSpecs.Read {
+            }
+            var ms = ModalStack.getPageStack();
+            ms.pushModalSpec(new ReadSpec({
+              url: url,
+              updateSubmitHandler :FormSubmitHandler,
+              updateSubmitModalHandler : FormSubmitModalHandler
+            }));
+          });
+          e.preventDefault();
+        }
+        calcRenderValue (){
           var fi = this.props.fieldinfo;
           var bean = this.props.bean;
           var fieldname = fi.name;
@@ -129,13 +157,26 @@ define(
             var nameVal = fieldvalue[displayFieldName];
             var template = new UriTemplate(fi.recordUri);
             var url =template.fill(bean);
-            return (<span>{nameVal}<a className="entity-form-modal-view" href={url}><i className="fa fa-external-link"/></a></span>);
+            return {
+              displayValue : nameVal,
+              popupLink : url,
+              valid : true
+            }
           }
-          return <span/>;
+          return {};
+        }
+        render(){
+          var renderVal = this.calcRenderValue() || {};
+          if(renderVal.valid){
+            return (<span>{renderVal.displayValue}<a ref='a' className="entity-form-modal-view" href={renderVal.popupLink}>
+              <i ref="popLink" className="fa fa-external-link" onClick={this.onPopLinkClick}/></a></span>);
+          }else{
+            return <span/>;
+          }
         }
       }
-      class ExternalForeignKeyCell extends CellBase{
-        render() {
+      class ExternalForeignKeyCell extends ForeignKeyCell{
+        calcRenderValue (){
           var fi = this.props.fieldinfo;
           var bean = this.props.bean;
           var fieldname = fi.name;
@@ -148,10 +189,14 @@ define(
             var idVal = fieldvalue;
             var nameVal = refForeignEntity[entityFieldDisplayProperty];
             var template = new UriTemplate(fi.recordUri);
-            var url =template.fill(bean);
-            return (<span>{nameVal}<a className="entity-form-modal-view" href={url}><i className="fa fa-external-link" /></a></span>);
+            var url = template.fill(bean);
+            return {
+              displayValue : nameVal,
+              popupLink : url,
+              valid : true
+            }
           }
-          return <span/>;
+          return {};
         }
       }
 

@@ -38,7 +38,7 @@ define(
         var formInfo = this.props.formInfo;
         var tform = this.props.tform;
 
-        var fns = tform.props.namespace;
+        var fns = tform.state.namespace;
         var entityContext = tform.state.entityContext;
         var entity = tform.state.entity;
         var bean=entity.bean;

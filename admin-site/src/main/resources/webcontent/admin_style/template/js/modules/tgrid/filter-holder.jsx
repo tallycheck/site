@@ -152,7 +152,7 @@ define(
       render  :function(){
         var fi = this.props.fieldinfo;
         var grid = this.props.grid;
-        var gns = grid.props.namespace;
+        var gns = grid.state.namespace;
         var FilterType = this.props.filterType;
 
         var sortIcon = "";
