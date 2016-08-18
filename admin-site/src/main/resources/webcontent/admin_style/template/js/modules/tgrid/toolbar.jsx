@@ -181,7 +181,7 @@ define(['jquery', 'underscore','../datamap','math',
             var btn = (
               <button type="button" key={actionName} className="btn btn-default action-control" data-action={actionName}
                       data-edit-in-modal="true" data-edit-success-redirect="false"
-                      data-action-uri={actionUri} onClick={grid.onEventCreateButtonClick}>
+                      data-action-uri={actionUri} onClick={grid.onEventCreateButtonClick.bind(grid)}>
                 <span className="fa fa-plus" aria-hidden="true"></span> {actionText}
               </button>);
             btns.push(btn);
@@ -197,7 +197,7 @@ define(['jquery', 'underscore','../datamap','math',
                       data-action={actionName}
                       data-edit-in-modal="true"
                       data-action-url="" data-edit-success-redirect="false" disabled={!focusing}
-                      data-action-uri={actionUri} onClick={grid.onEventUpdateButtonClick}>
+                      data-action-uri={actionUri} onClick={grid.onEventUpdateButtonClick.bind(grid)}>
                 <span className="fa fa-pencil-square-o" aria-hidden="true"></span> {actionText}
               </button>);
             btns.push(btn);
@@ -212,7 +212,7 @@ define(['jquery', 'underscore','../datamap','math',
               <button type="button" key={actionName} className="btn btn-default action-control entity-action"
                       data-action={actionName}
                       data-action-url="" disabled={!focusing}
-                      data-action-uri={actionUri} onClick={grid.onEventDeleteButtonClick}>
+                      data-action-uri={actionUri} onClick={grid.onEventDeleteButtonClick.bind(grid)}>
                 <span className="fa fa-times" aria-hidden="true"></span> {actionText}</button>);
             btns.push(btn);
           }

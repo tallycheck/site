@@ -49,9 +49,48 @@ define(
     var TGridDefaultProps = {
       isMain: false,
     }
-    class TGrid extends React.Component{
+    class TGrid extends React.Component {
 
-      static updateStateBy (grid, queryResult, fresh) {
+      static csrf() {
+        return $("form[name=formtemplate] input[name=_csrf]").val();
+      }
+
+      constructor(props) {
+        super(props);
+        this.AJAX_LOCK = 0;
+        this.maxHeight = 0;
+        //TGrid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> TGrid.stateUpdate
+        //avoid Inverse data Flow
+        this.updateVersion = version_init;
+
+        var beansMap = new Object();
+        var ranges = new Ranges();
+        var csrf = TGrid.csrf();
+        this.state = {
+          namespace: 'gns_' + Math.floor(Math.random() * 1e15) + '.',
+
+          queryUri: undefined,
+          entityContext: undefined,
+          actions: undefined,
+          links: undefined,
+
+          totalRecords: 0,
+          recordRanges: ranges,
+          parameter: "",
+          cparameter: "",
+          searchField: '',
+          searchKey: '',
+          beansMap: beansMap,
+
+          loading: false,
+          csrf: csrf,
+          version: this.updateVersion
+        };
+        this.doResize = this.doResize.bind(this);
+      }
+
+      updateStateBy(queryResult, fresh) {
+        var grid = this;
         fresh = !!(fresh);
         var origState = grid.state;
         var queryResponse = EntityResponse.QueryResponse.newInstance(queryResult);
@@ -91,54 +130,20 @@ define(
         };
         grid.setState(newState);
       }
-      static csrf () {
-        return $("form[name=formtemplate] input[name=_csrf]").val();
-      }
-      constructor(props) {
-        super(props);
-        this.AJAX_LOCK = 0;
-         this.maxHeight = 0;
-        //TGrid.stateUpdate -> Header.stateUpdate -> FilterHolder.stateUpdate -(X)-> TGrid.stateUpdate
-        //avoid Inverse data Flow
-        this.updateVersion= version_init;
 
-        var beansMap = new Object();
-        var ranges = new Ranges();
-        var csrf = TGrid.csrf();
-        this.state = {
-          namespace: 'gns_' + Math.floor(Math.random() * 1e15) + '.',
-
-          queryUri: undefined,
-          entityContext: undefined,
-          actions: undefined,
-          links: undefined,
-
-          totalRecords: 0,
-          recordRanges: ranges,
-          parameter: "",
-          cparameter: "",
-          searchField: '',
-          searchKey: '',
-          beansMap: beansMap,
-
-          loading: false,
-          csrf: csrf,
-          version: this.updateVersion
-        };
-        this.doResize = this.doResize.bind(this);
-      }
-
-      acquireLock () {
+      acquireLock() {
         if (this.AJAX_LOCK == 0) {
           this.AJAX_LOCK = 1;
           return true;
         }
         return false;
       }
-      releaseLock () {
+
+      releaseLock() {
         this.AJAX_LOCK = 0;
       }
-      setMaxHeight (height) {
+
+      setMaxHeight(height) {
         height = height || TGrid.DefaultMaxHeight;
         var node = ReactDOM.findDOMNode(this);
         var $node = $(node);
@@ -147,17 +152,20 @@ define(
 
         this.updateBodyMaxHeight();
       }
-      updateBodyMaxHeight () {
+
+      updateBodyMaxHeight() {
         var headerGroup = $(ReactDOM.findDOMNode(this.refs.headerGroup));
         var body = $(ReactDOM.findDOMNode(this.refs.body));
         var footerGroup = $(ReactDOM.findDOMNode(this.refs.footerGroup));
         var maxBodyHeight = this.maxHeight - headerGroup.height() - footerGroup.height();
         body.css('max-height', '' + maxBodyHeight + 'px');
       }
-      getSpinner(){
+
+      getSpinner() {
         return this.refs.body.refs.spinner;
       }
-      doResize () {
+
+      doResize() {
         var header = this.refs.header;
         var headerFilterGroup = header.refs.filterGroup;
         var body = this.refs.body;
@@ -165,16 +173,19 @@ define(
         headerFilterGroup.updateColumnWidth(widths);
         body.syncHeaderColumns();
       }
-      componentDidMount () {
+
+      componentDidMount() {
         var node = ReactDOM.findDOMNode(this);
         new ResizeSensor(node, this.doResize);
         this.setMaxHeight();
       }
-      componentWillUnmount () {
+
+      componentWillUnmount() {
         var node = ReactDOM.findDOMNode(this);
         ResizeSensor.detach(node, this.doResize);
       }
-      shouldComponentUpdate (nextProps, nextState, nextContext) {
+
+      shouldComponentUpdate(nextProps, nextState, nextContext) {
         var ps = this.state;
         var ns = nextState;
         if (ps.version == version_init) {
@@ -187,14 +198,16 @@ define(
         }
         return false;
       }
-      componentWillUpdate (nextProps, nextState, nextContext, transaction) {
+
+      componentWillUpdate(nextProps, nextState, nextContext, transaction) {
         var ps = this.state;
         var ns = nextState;
         if ((ps.cparameter != ns.cparameter) || (version_init == this.updateVersion)) {
         }
         console.log("GRID will update");
       }
-      componentDidUpdate (prevProps, prevState, prevContext, rootNode) {
+
+      componentDidUpdate(prevProps, prevState, prevContext, rootNode) {
         var ps = prevState;
         var ns = this.state;
         if ((ps.cparameter != ns.cparameter) || (version_init == this.updateVersion)) {
@@ -215,7 +228,8 @@ define(
         this.onVisibleRangeUpdate();
         console.log("GRID did update");
       }
-      render () {
+
+      render() {
         var entityContext = this.state.entityContext;
         var info = entityContext ? entityContext.info : null;
         return (
@@ -238,7 +252,8 @@ define(
           </div>
         );
       }
-      onSelectedIndexChanged (oldBean, newBean, oldIndex, newIndex) {
+
+      onSelectedIndexChanged(oldBean, newBean, oldIndex, newIndex) {
         console.log("selected index changed: " + oldIndex + " -> " + newIndex);
         if (newBean) {
           var idField = this.state.entityContext.idField;
@@ -248,7 +263,8 @@ define(
           this.refs.toolbar.focuseToId('');
         }
       }
-      onVisibleRangeUpdate () {
+
+      onVisibleRangeUpdate() {
         var body = this.refs.body;
         var footer = this.refs.footer;
 
@@ -264,10 +280,12 @@ define(
         this.triggerLoadPending();
         this.updateMainUrl();
       }
-      onScroll () {
+
+      onScroll() {
 
       }
-      updateMainUrl (all) {
+
+      updateMainUrl(all) {
         //if all: parameter update
         //else: just update startIndex
         if (!this.props.isMain)
@@ -295,7 +313,8 @@ define(
           });
         }
       }
-      updateHeaderParameter (prevCparam, nextCparam) {
+
+      updateHeaderParameter(prevCparam, nextCparam) {
         var header = this.refs.header;
         var headerVersion = header.state.version;
         if ((headerVersion < this.updateVersion) || (nextCparam != prevCparam)) {
@@ -305,7 +324,8 @@ define(
           });
         }
       }
-      updateToolbarSearchText (searchField, prevSearchText, nextSearchText) {
+
+      updateToolbarSearchText(searchField, prevSearchText, nextSearchText) {
         if (nextSearchText === prevSearchText)
           return;
         var search = this.refs.toolbar.refs.search;
@@ -316,7 +336,8 @@ define(
           presenting: nextSearchText
         });
       }
-      onEventCreateButtonClick (e) {
+
+      onEventCreateButtonClick(e) {
         var grid = this;
         var body = this.refs.body;
         var readUri = this.state.links.create;
@@ -339,11 +360,12 @@ define(
           ms.pushModalSpec(new CreateSpec({
             url: uri,
             createSubmitHandler: FormSubmitHandler,
-            createSubmitModalHandler : FormSubmitModalHandler
+            createSubmitModalHandler: FormSubmitModalHandler
           }));
         });
       }
-      onEventUpdateButtonClick (e) {
+
+      onEventUpdateButtonClick(e) {
         var grid = this;
         var body = this.refs.body;
         var bean = body.selectedBean();
@@ -367,12 +389,13 @@ define(
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new ReadSpec({
             url: uri,
-            updateSubmitHandler :FormSubmitHandler,
-            updateSubmitModalHandler : FormSubmitModalHandler
+            updateSubmitHandler: FormSubmitHandler,
+            updateSubmitModalHandler: FormSubmitModalHandler
           }));
         });
       }
-      onEventDeleteButtonClick (e) {
+
+      onEventDeleteButtonClick(e) {
         var grid = this;
         var body = this.refs.body;
         var bean = body.selectedBean();
@@ -404,10 +427,12 @@ define(
           ms.pushModalSpec(new DeleteSpec(delOpts));
         });
       }
-      dataAccess () {
+
+      dataAccess() {
         return new GridDataAccess(this);
       }
-      requestDoFilterByFilters (caller) {
+
+      requestDoFilterByFilters(caller) {
         if (caller.constructor.displayName != 'FilterHolder')
           throw new Error("Type error.");
         console.log("grid requestDoFilterByFilters");
@@ -415,16 +440,19 @@ define(
           this.doLoadByFilters();
         }
       }
-      doReload () {
+
+      doReload() {
         var da = this.dataAccess();
         var queryParam = da.buildQueryParam();
         var url = (new EntityRequest.QueryHandler()).buildUrl(queryParam);
         this.doLoadByUrl(url, true);
       }
-      doLoadByUrl (url, fresh) {
+
+      doLoadByUrl(url, fresh) {
         this.ajaxLoadData({url: url}, fresh);
       }
-      doLoadByFilters () {
+
+      doLoadByFilters() {
         var da = this.dataAccess();
         var cparam = da.gatherCriteriaParameter();
         this.setState({'cparameter': cparam}, function () {
@@ -433,7 +461,8 @@ define(
           this.doLoadByUrl(url, true);
         });
       }
-      doLoadPending () {
+
+      doLoadPending() {
         var da = this.dataAccess();
         var pendingRange = da.screenPendingRange();
         if (pendingRange == null) {
@@ -442,13 +471,15 @@ define(
         var pendingQueryParam = da.buildQueryParam(pendingRange);
         this.ajaxLoadData(pendingQueryParam, false);
       }
-      triggerLoadPending () {
+
+      triggerLoadPending() {
         var _this = this;
         doTimeout("loadpending", fetchDebounce, function () {
           _this.doLoadPending();
         });
       }
-      ajaxLoadData (queryParam, fresh) {
+
+      ajaxLoadData(queryParam, fresh) {
         if (_.isObject(queryParam)) {
           var range = queryParam.range;
           if (range) {
@@ -474,7 +505,7 @@ define(
           onSuccess(data, param) {
             var response = data;
             var queryResult = response.data;
-            TGrid.updateStateBy(_grid, queryResult, ffresh);
+            _grid.updateStateBy(queryResult, ffresh);
             _grid.triggerLoadPending();
           }
 
@@ -486,7 +517,8 @@ define(
         }
         EntityRequest.query(queryParam, new QueryHandler());
       }
-    };
+    }
+    ;
     TGrid.defaultProps = TGridDefaultProps;
     TGrid.DefaultMaxHeight = 400;
 
@@ -495,7 +527,7 @@ define(
 
       var grid = ReactDOM.render(gridEle, div);
 
-      TGrid.updateStateBy(grid, queryResult);
+      grid.updateStateBy(queryResult);
     }
 
     exports.TGrid = TGrid;

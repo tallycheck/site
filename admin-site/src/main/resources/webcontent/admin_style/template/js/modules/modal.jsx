@@ -114,7 +114,7 @@ define(
         var bc = (<div>
           <p>{bt}</p>
 
-          <div ref="progress" className="progress">
+          <div ref="progress" className="progress fresh-progress">
             <div className="progress-bar progress-bar-striped active" style={{width: "100%"}}></div>
           </div>
         </div>);
@@ -123,7 +123,6 @@ define(
 
       getFooter() {
         return this.getGenericFooter(false, false, false);
-        ;
       }
     }
     var Contents = {

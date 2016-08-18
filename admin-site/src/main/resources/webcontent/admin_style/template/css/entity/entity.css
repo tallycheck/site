@@ -34,12 +34,23 @@ section#contentContainer ol.breadcrumb li:last-child > span{
     
 }
 
+.progress.fresh-progress{
+    margin-bottom: 0;
+}
+.progress.fresh-progress .progress-bar{
+    background-color: #CCC;
+}
+
 .action-group{
     text-align: right;
     /* padding-right: 6px; */
 }
 .action-group .action-control{
     margin-left: 2px;
+    margin-right: 2px;
+}
+.action-group .spinner{
+    margin-left: 5px;
     margin-right: 2px;
 }
 .action-group .action-control,

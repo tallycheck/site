@@ -17,8 +17,7 @@ define(
           actions: [],
           links: {},
           lock: false,
-          dirty: false,
-          saving: false
+          processing: false
         };
         this.onSaveClick = this.onSaveClick.bind(this);
         this.onDeleteClick = this.onDeleteClick.bind(this);
@@ -29,6 +28,7 @@ define(
         this.setState({
           actions: tform.state.actions,
           links: tform.state.links,
+          processing: tform.state.loading,
         });
       }
 
@@ -40,29 +40,30 @@ define(
         var showSave = _.indexOf(actions, saveAction) >= 0;
         var deleteEle = showDelete ? (<button type="button" className="btn btn-default action-control entity-action"
                                               data-action={deleteAction} style={{display: "inline-block"}}
+                                              disabled={this.state.processing}
                                               onClick={this.onDeleteClick}>
           <span className="fa fa-times" aria-hidden="true"></span>{entityText.GRID_ACTION_delete}
         </button>) : <div/>;
-        var spinnerStyle = {display: this.state.saving ? "block" : "none"};
+        var spinnerStyle = {display: this.state.processing ? "inline-block" : "none"};
         var saveEle = showSave ? (<div className="action-control entity-action submit-entity"
-                                       data-action={saveAction} data-action-url="" disabled={!this.state.dirty}
+                                       data-action={saveAction} data-action-url=""
                                        style={{display: "inline-block"}}>
-            <button type="button" className="btn btn-default" onClick={this.onSaveClick}>
+            <button type="button" className="btn btn-default" disabled={this.state.processing} onClick={this.onSaveClick}>
               <span className="fa fa-floppy-o" aria-hidden="true"></span>{entityText.GRID_ACTION_save}
             </button>
-            <span className="spinner" style={spinnerStyle}><i className="fa fa-spin fa-circle-o-notch"></i></span>
           </div>
         ) : <div/>;
 
         return (<div className="action-group" style={{display: "block"}}>
           {deleteEle}
           {saveEle}
+          <span className="spinner" style={spinnerStyle}><i className="fa fa-spin fa-circle-o-notch"></i></span>
         </div>);
       }
 
       onDeleteClick() {
         var tform = this.props.tform;
-        tform.onFireDelete();
+        tform.doDelete();
       }
 
       onSaveClick() {

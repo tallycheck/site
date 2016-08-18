@@ -9,23 +9,29 @@ define(
     var ajax = require('ajax');
     var Debugger = require('debugger');
     var UrlUtil = require('url-utility');
+    var HandlerUtils = require('handler-utils');
+    var actionHandlerExecutor = HandlerUtils.handlerExecutor;
+    var ENABLE_REQUEST_DEBUG = true;
 
-    class ActionHandler {
+    class RequestHandler {
+      onWillRequest(param){
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action will request");
+      }
 
       onSuccess(data, param) {
-        console.log("Action success");
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action success");
       }
 
       onFail(data, param) {
-        console.log("Action fail");
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action fail");
       }
 
       onError() {
-        console.log("Action error");
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action error");
       }
 
       onComplete() {
-        console.log("Action complete");
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action complete");
       }
 
       redirect(url) {
@@ -39,42 +45,60 @@ define(
         }
       }
     }
-    exports.ActionHandler = ActionHandler;
+
+    function makeGeneralAjaxOptions(fParam, fHandler){
+      return {
+        beforeSend: function (jqXHR, settings ){
+          fHandler.onWillRequest(fParam);
+        },
+        success: function (data, textStatus, jqXHR, opts) {
+          var response = data;
+          if (response.success) {
+            fHandler.onSuccess(response, fParam);
+          } else {
+            fHandler.onFail(response, fParam);
+          }
+        },
+        error: function () {
+          fHandler.onError();
+        },
+        complete: function (jqXHR, textStatus) {
+          fHandler.onComplete();
+        }
+      }
+    }
+
+    exports.RequestHandler = RequestHandler;
 
     var PostEntityDefaultParam = {
       url: '',
-      entityData: {}
+      entityData: {},
     };
-    class PostEntityHandler extends ActionHandler {
+    class PostEntityHandler extends RequestHandler {
+    }
+
+    function ensureHandler(handler, HandlerType){
+      handler = handler || new HandlerType();
+      if (!handler instanceof HandlerType)
+        throw new Error("Type Error");
+      return handler;
     }
 
     var CreateReadDefaultParam = {
       url: ""
     }
-    class CreateGetHandler extends ActionHandler {
+    class CreateGetHandler extends RequestHandler {
     }
-    var _createGet = function (param, handler) {
-      if (!handler instanceof CreateGetHandler)
-        throw new Error("Type Error");
+    var _createGet = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, CreateGetHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, CreateReadDefaultParam, param);
-      var ajaxOptions = {
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var request = {
         url: fParam.url,
-        type: "get",
-        success: function (data, textStatus, jqXHR, opts) {
-          var response = data;
-          if (response.success) {
-            handler.onSuccess(response, fParam);
-          } else {
-            handler.onFail(response, fParam);
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete();
-        }
+        type: "get"
       }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.createGet = _createGet;
@@ -83,38 +107,27 @@ define(
     var CreateDefaultParam = _.extend({}, PostEntityDefaultParam);
     class CreateHandler extends PostEntityHandler {
     }
-    var _create = function (param, handler) {
-      if (!handler instanceof CreateHandler)
-        throw new Error("Type Error");
+    var _create = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, CreateHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, CreateDefaultParam, param);
-      var ajaxOptions = {
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var request = {
         url: fParam.url,
         type: "post",
         data: fParam.entityData,
-        success: function (data, textStatus, jqXHR, opts) {
-          var response = data;
-          if (response.success) {
-            handler.onSuccess(response, fParam);
-          } else {
-            handler.onFail(response, fParam);
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete();
-        }
-      };
+      }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.create = _create;
     exports.CreateHandler = CreateHandler;
 
     var ReadDefaultParam = {
-      url: ""
+      url: "",
+      extraHandlers:null
     }
-    class ReadHandler extends ActionHandler {
+    class ReadHandler extends RequestHandler {
       onSuccess(data, param) {
         console.log("Read success");
       }
@@ -127,28 +140,16 @@ define(
         console.log("Read error");
       }
     }
-    var _read = function (param, handler) {
-      if (!handler instanceof ReadHandler)
-        throw new Error("Type Error");
+    var _read = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, ReadHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, ReadDefaultParam, param);
-      var ajaxOptions = {
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var request = {
         url: fParam.url,
         type: "get",
-        success: function (data, textStatus, jqXHR, opts) {
-          var response = data;
-          if (response.success) {
-            handler.onSuccess(response, fParam);
-          } else {
-            handler.onFail(response, fParam);
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete();
-        }
       }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.read = _read;
@@ -157,29 +158,17 @@ define(
     var UpdateDefaultParam = _.extend({}, PostEntityDefaultParam);
     class UpdateHandler extends PostEntityHandler {
     }
-    var _update = function (param, handler) {
-      if (!handler instanceof UpdateHandler)
-        throw new Error("Type Error");
+    var _update = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, UpdateHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, UpdateDefaultParam, param);
-      var ajaxOptions = {
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var request = {
         url: fParam.url,
         type: "post",
         data: fParam.entityData,
-        success: function (data, textStatus, jqXHR, opts) {
-          var response = data;
-          if (response.success) {
-            handler.onSuccess(response, fParam);
-          } else {
-            handler.onFail(response, fParam);
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete();
-        }
-      };
+      }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.update = _update;
@@ -190,9 +179,8 @@ define(
       csrf: "",
       type: undefined,
       ceilingType: undefined,
-      successRedirect: false
     }
-    class DeleteHandler extends ActionHandler {
+    class DeleteHandler extends RequestHandler {
       onSuccess(data, param) {
         console.log("Delete success");
       }
@@ -210,39 +198,23 @@ define(
       }
 
     }
-    var _delete = function (param, handler) {
-      if (!handler instanceof DeleteHandler)
-        throw new Error("Type Error");
+    var _delete = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, DeleteHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, DeleteDefaultParam, param);
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
       var postData = {
         _csrf: fParam.csrf,
         type: fParam.type,
         ceilingType: fParam.ceilingType
       };
 
-      var ajaxOptions = {
+      var request = {
         url: fParam.url,
         type: "post",
         data: postData,
-        success: function (data, textStatus, jqXHR, opts) {
-          if (typeof data == "object") {
-            if (data.success) {
-              if (fparam.successRedirect) {
-                handler.redirect(data);
-              }
-              handler.onSuccess(data, fParam);
-            } else {
-              handler.onFail(data, fParam);
-            }
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete();
-        }
-      };
+      }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.delete = _delete;
@@ -264,7 +236,7 @@ define(
       cparameter: '',
       range: undefined,
     }
-    class QueryHandler extends ActionHandler {
+    class QueryHandler extends RequestHandler {
       buildUrl(param) {
         if (!!param.url) {
           if (_.isString(param.url)) {
@@ -293,32 +265,20 @@ define(
         return url;
       }
     }
-    var _query = function (param, handler) {
-      if (!handler instanceof QueryHandler)
-        throw new Error("Type Error");
+    var _query = function (param, handler, optionalExtraHandlers /*optional*/) {
+      handler = ensureHandler(handler, QueryHandler);
+      var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, QueryDefaultParam, param);
+      var fHandler = actionHandlerExecutor(handler, extraHandlers);
       var url = handler.buildUrl(fParam);
       if (url == null) return;
 
       console.log("will load url: " + url);
-      var ajaxOptions = {
+      var request = {
         url: url,
         type: "get",
-        success: function (data, textStatus, jqXHR, opts) {
-          var response = data;
-          if (response.success) {
-            handler.onSuccess(response, fParam);
-          } else {
-            handler.onFail(response, fParam);
-          }
-        },
-        error: function () {
-          handler.onError();
-        },
-        complete: function (jqXHR, textStatus) {
-          handler.onComplete(fParam);
-        }
       }
+      var ajaxOptions = _.extend(request, makeGeneralAjaxOptions(fParam, fHandler));
       ajax(ajaxOptions);
     }
     exports.query = _query;

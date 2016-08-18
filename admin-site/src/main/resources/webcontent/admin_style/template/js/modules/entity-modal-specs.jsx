@@ -12,6 +12,9 @@ define(
     var commonText = require('i18n!nls/commonText');
     var entityText = require('i18n!nls/entityText');
     var EntityRequest = require('entity-request');
+    var HandlerUtils = require('handler-utils');
+    var HandlerExecutor = HandlerUtils.handlerExecutor;
+    var ModalHandlersComp = require('./modal-handlers');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -23,6 +26,9 @@ define(
 
     var ModalContents = modal.Contents;
     var ModalContent = modal.Contents.ModalContent;
+    var ModalHandler = ModalHandlersComp.ModalHandler;
+    var ModalRequestHandler = ModalHandlersComp.ModalRequestHandler;
+    var ModalHandlers = ModalHandlersComp.ModalHandlers;
 
     var ModalHanderProxyHandler = {
       get: function(target, name){
@@ -43,7 +49,8 @@ define(
         return mainFunc;
       }
     };
-    var EmptyActionHandler = { //compatible with ActionHandler
+
+    var EmptyRequestHandler = { //compatible with RequestHandler
       onSuccess: function (data, param) {},
       onFail: function (data, param) {},
       onError: function () {},
@@ -81,8 +88,7 @@ define(
       onShown(modal, spec) {
         var tform = modal.refs.tForm;
         var response = this.options.response;
-        var TForm = TFormComp.TForm;
-        TForm.updateStateBy(tform, response, true);
+        tform.updateStateBy(response, true);
       }
     }
 
@@ -99,7 +105,7 @@ define(
       defaultOptions() {
         return {
           url: '',
-          createGetExtraHandler: { //compatible with ActionHandler
+          createGetExtraHandler: { //compatible with RequestHandler
             //onSuccess: function (data, param) {},
             //onFail: function (data, param) {},
             //onError: function () {},
@@ -144,7 +150,7 @@ define(
             var readParam = {
               url: specOptions.url,
             };
-            var extraHandler = _.extend({}, EmptyActionHandler, specOptions.createGetExtraHandler);
+            var extraHandler = _.extend({}, EmptyRequestHandler, specOptions.createGetExtraHandler);
             class CreateGetHandler extends EntityRequest.CreateGetHandler {
               onSuccess(data, param) {
                 var response = data.data;
@@ -215,7 +221,7 @@ define(
       defaultOptions() {
         return {
           url: '',
-          readExtraHandler: { //compatible with ActionHandler
+          readExtraHandler: { //compatible with RequestHandler
             //onSuccess: function (data, param) {},
             //onFail: function (data, param) {},
             //onError: function () {},
@@ -260,7 +266,7 @@ define(
             var readParam = {
               url: specOptions.url,
             }
-            var extraHandler = _.extend({}, EmptyActionHandler, specOptions.readExtraHandler);
+            var extraHandler = _.extend({}, EmptyRequestHandler, specOptions.readExtraHandler);
             class ReadHandler extends EntityRequest.ReadHandler {
               onSuccess(data, param) {
                 var response = data.data;
@@ -354,12 +360,8 @@ define(
           csrf: undefined,
           type: undefined,
           ceilingType: undefined,
-          deleteExtraHandler: {
-            onSuccess: null,
-            onFail: null,
-            onError: null,
-            onComplete:null
-          }
+          deleteListener:undefined,
+          deleteExtraHandler: undefined, //RequestHandler
         };
       }
 
@@ -379,7 +381,6 @@ define(
 
           getFooter() {
             return this.getGenericFooter(true, true, false);
-            ;
           }
 
           onPositiveButtonClick() {
@@ -413,15 +414,13 @@ define(
               successRedirect: specOptions.successRedirect
             };
             var extraHandler = specOptions.deleteExtraHandler;
-            class DelHandler extends EntityRequest.DeleteHandler {
-              onSuccess(data, opts) {
-                if (extraHandler.onSuccess) {
-                  extraHandler.onSuccess();
-                }
+            var modalHandler = HandlerExecutor(new ModalHandler(), [extraHandler]);
+            var modalRequestHandler = new ModalRequestHandler(modal, modalHandler);
+            var reactOnResponse = {
+              onSuccess : function(data, opts) {
                 modal.hide();
-              }
-
-              onFail(data, opts) {
+              },
+              onFail: function(data, opts) {
                 var errors = (data.data) ? data.data.errors : null;
                 if (errors)
                   errors = errors.global;
@@ -430,25 +429,9 @@ define(
                   bodyText: errors
                 };
                 _spec.updateContent(_spec.deleteErrorContent(deleteErrorOption));
-
-                if (extraHandler.onFail) {
-                  extraHandler.onFail();
-                }
-              }
-
-              onError() {
-                if (extraHandler.onError) {
-                  extraHandler.onError();
-                }
-              }
-
-              onComplete() {
-                if (extraHandler.onComplete) {
-                  extraHandler.onComplete();
-                }
               }
             }
-            EntityRequest.delete(delParam, new DelHandler());
+            EntityRequest.delete(delParam, null, [modalRequestHandler, reactOnResponse, specOptions.deleteListener]);
           }
         }
         return new DeletingContent();

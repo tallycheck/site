@@ -33,6 +33,7 @@ requirejs.config({
     "url-utility" : "/js/modules/url-utility",
     "basic" :"/js/modules/basic",
     "debugger" :"/js/modules/debugger",
+    "handler-utils":"/js/modules/handler-utils",
 
     "entity-info" :"/js/modules/entity-info",
     "entity-request" :"/js/modules/entity-request",
