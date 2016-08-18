@@ -188,9 +188,13 @@ define(['jquery',
           } else {
             range.each(function (i) {
               var bean = entities.beansMap[i];
-              var row = <Row key={i} selected={selectedIndex == i} entityContext={entityContext} info={gridinfo}
-                             bean={bean} beanIndex={i} body={theBody}/>;
-              rows.push(row);
+              if(_.isNull(bean)||_.isUndefined(bean)){
+                rows.push(<PaddingRow key={i} range={new Range(i, i+1)}/>);
+              }else {
+                var row = <Row key={i} selected={selectedIndex == i} entityContext={entityContext} info={gridinfo}
+                               bean={bean} beanIndex={i} body={theBody}/>;
+                rows.push(row);
+              }
             })
           }
         });

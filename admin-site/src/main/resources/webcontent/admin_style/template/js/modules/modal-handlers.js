@@ -8,10 +8,16 @@ define(
       onWillRequest(modal) {
       }
 
+      onResultWillProcess(success, data, param) {
+      }
+
       onSuccess(modal, response) {
       }
 
       onFail(modal, response) {
+      }
+
+      onResultDidProcess(success, data, param) {
       }
 
       onError(modal) {
@@ -27,8 +33,12 @@ define(
         this.modalHandler = modalHandler;
       }
 
-      onWillRequest(param){
+      onWillRequest(param) {
         this.modalHandler.onWillRequest(this.modal);
+      }
+
+      onResultWillProcess(success, data, param) {
+        this.modalHandler.onResultWillProcess(success, this.modal, data);
       }
 
       onSuccess(data, param) {
@@ -37,6 +47,10 @@ define(
 
       onFail(data, param) {
         this.modalHandler.onFail(this.modal, data);
+      }
+
+      onResultDidProcess(success, data, param) {
+        this.modalHandler.onResultDidProcess(success, this.modal, data);
       }
 
       onError() {

@@ -220,8 +220,8 @@ define(
           console.log("GRID cparameter changed: [ '" + ps.cparameter + "' -> '" + ns.cparameter + "' ]");
           this.updateHeaderParameter(ps.cparameter, ns.cparameter);
         }
-        if ((ps.searchKey) != (ns.searchKey)) {
-          this.updateToolbarSearchText(ns.searchField, ps.searchKey, ns.searchKey);
+        if ((ps.searchKey != ns.searchKey) || (ps.searchField != ns.searchField)) {
+          this.updateToolbarSearchText(ps.searchField, ns.searchField, ps.searchKey, ns.searchKey);
         }
         this.doResize();
         this.updateBodyMaxHeight();
@@ -285,6 +285,14 @@ define(
 
       }
 
+      clearContentRows() {
+        this.setState({beansMap: {}, recordRanges: new Ranges()});
+      }
+
+      scrollToIndex(index) {
+
+      }
+
       updateMainUrl(all) {
         //if all: parameter update
         //else: just update startIndex
@@ -325,13 +333,13 @@ define(
         }
       }
 
-      updateToolbarSearchText(searchField, prevSearchText, nextSearchText) {
-        if (nextSearchText === prevSearchText)
+      updateToolbarSearchText(preSearchField, nextSearchField, prevSearchText, nextSearchText) {
+        if (nextSearchText === prevSearchText && preSearchField === nextSearchField)
           return;
         var search = this.refs.toolbar.refs.search;
 
         search.setState({
-          searchField: searchField,
+          searchField: nextSearchField,
           inputting: undefined,
           presenting: nextSearchText
         });
@@ -344,14 +352,20 @@ define(
         var uri = readUri;
         require([EntityModalSpecsPath], function (EMSpecs) {
           var FormSubmitHandler = {
-            onSuccess(tform, response){
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "create success ....");
+            onSuccess: function (tform, response) {
+              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update success ....");
               grid.doReload();
+            },
+            onFail: function (tform, response) {
+              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail ....");
             }
           }
           var FormSubmitModalHandler = {
-            onSuccess(modal, tform, response){
+            onSuccess: function (modal, response) {
               modal.hide();
+            },
+            onFail: function (modal, response) {
+              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail modal ....");
             }
           }
           class CreateSpec extends EMSpecs.Create {
@@ -359,9 +373,10 @@ define(
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new CreateSpec({
             url: uri,
-            createSubmitHandler: FormSubmitHandler,
-            createSubmitModalHandler: FormSubmitModalHandler
-          }));
+          }).pushHandlers({
+              createSubmitFormHandlers: FormSubmitHandler,
+              createSubmitModalHandlers: FormSubmitModalHandler
+            }));
         });
       }
 
@@ -374,24 +389,45 @@ define(
         var uri = new UriTemplate(readUriTemplate).fill(idObj);
         require([EntityModalSpecsPath], function (EMSpecs) {
           var FormSubmitHandler = {
-            onSuccess(tform, response){
+            onSuccess: function (tform, response) {
               Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update success ....");
               grid.doReload();
+            },
+            onFail: function (tform, response) {
+              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail ....");
             }
           }
           var FormSubmitModalHandler = {
-            onSuccess(modal, tform, response){
+            onSuccess: function (modal, response) {
               modal.hide();
+            },
+            onFail: function (modal, response) {
+              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail modal ....");
             }
           }
           class ReadSpec extends EMSpecs.Read {
           }
+
+          var deleteRequestHandler = {
+            onSuccess: function () {
+              body.selectIndex(-1);
+              grid.doLoadByFilters();
+            }
+          }
+          var deleteModalHandler = {
+            onSuccess(modal, response) {
+              modal.hide();
+            }
+          }
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new ReadSpec({
             url: uri,
-            updateSubmitHandler: FormSubmitHandler,
-            updateSubmitModalHandler: FormSubmitModalHandler
-          }));
+          }).pushHandlers({
+              updateSubmitFormHandlers: FormSubmitHandler,
+              updateSubmitModalHandlers: FormSubmitModalHandler,
+              deleteModalHandlers: deleteModalHandler,
+              deleteRequestHandlers: deleteRequestHandler
+            }));
         });
       }
 
@@ -408,23 +444,25 @@ define(
           url: uri,
           csrf: csrf,
           type: entityContext.type,
-          ceilingType: entityContext.ceilingType,
-          deleteExtraHandler: {
-            onSuccess: function () {
-              body.selectIndex(-1);
-              grid.doLoadByFilters();
-            }
-          }
+          ceilingType: entityContext.ceilingType
         };
 
         require([EntityModalSpecsPath], function (EMSpecs) {
           var EMSpecs = require(EntityModalSpecsPath);
           class DeleteSpec extends EMSpecs.Delete {
           }
-          ;
+
+          var deleteRequestHandler = {
+            onSuccess: function () {
+              body.selectIndex(-1);
+              grid.doLoadByFilters();
+            }
+          }
 
           var ms = ModalStack.getPageStack();
-          ms.pushModalSpec(new DeleteSpec(delOpts));
+          ms.pushModalSpec(new DeleteSpec(delOpts).pushHandlers({
+            deleteRequestHandlers: deleteRequestHandler
+          }));
         });
       }
 
@@ -433,7 +471,7 @@ define(
       }
 
       requestDoFilterByFilters(caller) {
-        if (caller.constructor.displayName != 'FilterHolder')
+        if (caller.constructor.name != 'FilterHolder')
           throw new Error("Type error.");
         console.log("grid requestDoFilterByFilters");
         if (caller.leadingAhead(this.updateVersion)) {
@@ -480,16 +518,20 @@ define(
       }
 
       ajaxLoadData(queryParam, fresh) {
+        var loadingIndexAlign = null;
         if (_.isObject(queryParam)) {
           var range = queryParam.range;
           if (range) {
             var loadAlign = range.fromEnd ? (range.hi - 1) : range.lo;
-            this.getSpinner().setLoadingIndex(loadAlign);
+            loadingIndexAlign = loadAlign;
           }
         }
         if (queryParam == null) return;
         var _grid = this;
         var ffresh = (fresh === undefined) ? true : !!(fresh);
+        if (ffresh) {
+          loadingIndexAlign = 0;
+        }
         var _args = arguments;
 
         while (!_grid.acquireLock()) {
@@ -501,24 +543,31 @@ define(
           return false;
         }
 
-        class QueryHandler extends EntityRequest.QueryHandler {
-          onSuccess(data, param) {
+        var queryRequestHandler = {
+          onWillRequest: function (param) {
+            _grid.getSpinner().setLoadingIndex(loadingIndexAlign);
+            if (ffresh) {
+              _grid.clearContentRows();
+              _grid.scrollToIndex(0);
+            }
+          },
+          onSuccess: function (data, param) {
             var response = data;
             var queryResult = response.data;
             _grid.updateStateBy(queryResult, ffresh);
             _grid.triggerLoadPending();
-          }
+          },
 
-          onComplete(param) {
+          onComplete: function (param) {
             _grid.releaseLock();
             _grid.getSpinner().setLoadingIndex(null);
             _grid.updateMainUrl(true, param);
           }
         }
-        EntityRequest.query(queryParam, new QueryHandler());
+        EntityRequest.query(queryParam, null, queryRequestHandler);
       }
     }
-    ;
+
     TGrid.defaultProps = TGridDefaultProps;
     TGrid.DefaultMaxHeight = 400;
 

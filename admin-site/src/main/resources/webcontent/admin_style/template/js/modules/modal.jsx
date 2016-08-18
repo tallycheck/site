@@ -133,14 +133,60 @@ define(
 
 
     class ModalSpecBase {
-      constructor(options) {
-        this.options = _.extend(this.defaultOptions(), options);
+      constructor(options, handlers) {
+        this.options = _.extend({}, this.defaultOptions(), options);
         this.content = this.firstContent();
         this.listenerRegistery = [];
+        var defHandlers = this.defaultHandlers();
+        this.handlers = _.mapObject(defHandlers, function(val, key) {
+          return null;
+        });
+        this.pushHandlers(defHandlers);
+        this.pushHandlers(handlers);
       }
 
       defaultOptions() {
         return {};
+      }
+
+      defaultHandlers() {
+        return {};
+      }
+
+      pushHandlers(){
+        var _this = this;
+        var _handlers = this.handlers;
+        var newHandlers = _.flatten(arguments);
+        if(newHandlers.length == 0){
+          return this;
+        }
+        var handlerNames = _.keys(_handlers);
+        _.each(handlerNames, function(name){
+          var handlers4Name = _handlers[name];
+          if(_.isNull(handlers4Name) || _.isUndefined(handlers4Name)){
+            _handlers[name] = [];
+          }
+          if(!_.isArray(_handlers[name])){
+            throw new Error("handler container for '" + key + "' should be an array");
+          }
+        });
+        _.each(newHandlers, function(newHandler){
+          var pickedHandler = _.pick(newHandler, handlerNames);
+          _.each(handlerNames, function(name){
+            var handlers4Name = _handlers[name];
+            var handler = pickedHandler[name];
+            var handlersToPush =[];
+            if(_.isArray(handler)){
+              handlersToPush = _.flatten(handler);
+            }else if(_.isObject(handler)){
+              handlersToPush = [handler];
+            }
+            _.each(_.without(handlersToPush, null, undefined), function(h){
+              handlers4Name.push(h);
+            })
+          });
+        });
+        return this;
       }
 
       updateContent(content) {

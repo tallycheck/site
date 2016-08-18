@@ -16,26 +16,25 @@ define(
 
     var version_init = -1;
     var version_do_load = -2;
-    var FilterHolder = React.createClass({
-      statics : {
-        RefPrefix : "filterholder.",
-        getFilterName :function(fh){
-          var fi = fh.props.fieldinfo;
-          return fi.name;
-        },
-        getFilterKey:function(fh){
-          var fi = fh.props.fieldinfo;
-          return EntityInfo.filterKey(fi);
-        },
-        getSorterKey:function(fh){
-          var fi = fh.props.fieldinfo;
-          return EntityInfo.sorterKey(fi);
-        }
-      },
-      getInitialState :function() {
+    class FilterHolder extends React.Component{
+      static getFilterName (fh){
+      var fi = fh.props.fieldinfo;
+      return fi.name;
+    }
+      static getFilterKey(fh){
+      var fi = fh.props.fieldinfo;
+      return EntityInfo.filterKey(fi);
+    }
+      static getSorterKey(fh){
+      var fi = fh.props.fieldinfo;
+      return EntityInfo.sorterKey(fi);
+    }
+
+      constructor(props) {
+        super(props);
         var filterKey = FilterHolder.getFilterKey(this);
         var sorterKey = FilterHolder.getSorterKey(this);
-        return {
+        this.state = {
           filterShown: false,
           filterKey: filterKey,
           filterVal: "",
@@ -43,26 +42,27 @@ define(
           sorterVal: Orders.DEFAULT,
           version: version_init,  //the rendering version
         };
-      },
-      dirty : false,
-      leadingAhead : function(version){
+        this.dirty = false;
+        this.onEventClickDocument =this.onEventClickDocument.bind(this);
+      }
+      leadingAhead (version){
         if(version != this.state.version)
           return true;
         return this.dirty;
-      },
-      componentDidMount: function() {
+      }
+      componentDidMount() {
         $(document).on('click', this, this.onEventClickDocument);
         var fire = this.refs.filter.refs.fire;
         $(fire).on("click", this, this.onEventClickFilterButton);
         $(this.refs.resizer).on("mousedown", this, this.onEventResizerMouseDown);
-      },
-      componentWillUnmount: function() {
+      }
+      componentWillUnmount() {
         $(document).off('click', this.onEventClickDocument);
         var fire = this.refs.filter.refs.fire;
         $(fire).off("click", this.onEventClickFilterButton);
         $(this.refs.resizer).off("mousedown", this.onEventResizerMouseDown);
-      },
-      changeString : function(ps, ns) {
+      }
+      changeString (ps, ns) {
         var oldFVal = ps.filterVal;
         var newFVal = ns.filterVal;
         var oldSVal = ps.sorterVal;
@@ -71,8 +71,8 @@ define(
           "v: " + ps.version + "->" + ns.version + (this.dirty ? ", dirty" : "")+
           " show: " + ns.filterShown;
         return "" + FilterHolder.getFilterName(this) + cs;
-      },
-      shouldComponentUpdate:function(nextProps, nextState, nextContext){
+      }
+      shouldComponentUpdate(nextProps, nextState, nextContext){
         var ps = this.state;
         var ns = nextState;
         if(ps.version == version_init){
@@ -85,14 +85,14 @@ define(
         return (!_.isEqual(nextProps, this.props) ||
           !_.isEqual(newState, oldState) ||
           !_.isEqual(nextContext, this.context));
-      },
-      componentWillUpdate:function(nextProps, nextState, nextContext, transaction){
+      }
+      componentWillUpdate(nextProps, nextState, nextContext, transaction){
         var ps = this.state;
         var ns = nextState;
 
         console.log("holder will update: " + this.changeString(ps, ns));
-      },
-      componentDidUpdate:function(prevProps, prevState){
+      }
+      componentDidUpdate(prevProps, prevState){
         var grid = this.props.grid;
         var ps = prevState;
         var ns = this.state;
@@ -115,8 +115,8 @@ define(
           console.log("Fire do filter: " + this.changeString(ps, ns));
           grid.requestDoFilterByFilters(this);
         }
-      },
-      onEventClickDocument: function(e) {
+      }
+      onEventClickDocument(e) {
         if (ReactDOM.findDOMNode(this).contains(e.target)) {// Inside of the component.
         } else {
           if(this.state.filterShown) {
@@ -124,8 +124,8 @@ define(
             this.setState({filterShown: false});
           }
         }
-      },
-      onEventClickFilterButton : function(){
+      }
+      onEventClickFilterButton (){
         if(this.state.filterShown){
           // 1. close filter,
           // 2. trigger reload anyway.
@@ -134,22 +134,22 @@ define(
           var grid = this.props.grid;
           grid.requestDoFilterByFilters(this);
         }
-      },
-      onEventClickFilterIcon :function (){
+      }
+      onEventClickFilterIcon  (){
         // 1. toggle filter, trigger reload if param updated.
         this.setState({filterShown : !this.state.filterShown});
-      },
-      onEventClickSortIcon :function (){
+      }
+      onEventClickSortIcon  (){
         var nextSortVal = Orders.calcNextOrder(this.state.sorterVal);
         var header = this.props.grid.refs.header;
         header.unsetSorterExcept(this);
         // 1. trigger reload if param updated.
         this.setState({sorterVal : nextSortVal});
-      },
-      onEventResizerMouseDown : function(event){
+      }
+      onEventResizerMouseDown (event){
         this.props.onResizerMouseDown(this, event.pageX);
-      },
-      render  :function(){
+      }
+      render  (){
         var fi = this.props.fieldinfo;
         var grid = this.props.grid;
         var gns = grid.state.namespace;
@@ -161,14 +161,14 @@ define(
           var sortActiveCn = sortActive? "sort-active" : "";
           var sortFa = Orders.fa(this.state.sorterVal);
           sortIcon = <i ref="sortIcon"
-                        onClick={this.onEventClickSortIcon}
+                        onClick={this.onEventClickSortIcon.bind(this)}
                         className={"sort-icon fa fa-sort " + sortFa}></i>;
         }
         var filterIcon = '';
         if(fi.supportFilter){
           var filterActiveCn = (!!this.state.filterVal)? "filter-active" : "";
           filterIcon = <i ref="filterIcon"
-                          onClick={this.onEventClickFilterIcon}
+                          onClick={this.onEventClickFilterIcon.bind(this)}
                           className="filter-icon fa fa-filter"></i>;
         }
 
@@ -190,8 +190,8 @@ define(
           </div>
         </th>);
       }
-    });
-
+    };
+    FilterHolder.RefPrefix = "filterholder.";
 
     exports.FilterHolder = FilterHolder;
   }

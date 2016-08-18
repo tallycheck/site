@@ -37,7 +37,7 @@ define(
     var TFormDeleteHandlers = TFormHandlerComp.TFormDeleteHandlers;
 
 
-    class TFormSubmitHandler extends TFormHandler {
+    class SubmitFormHandler extends TFormHandler {
     }
     class TFormDeleteHandler extends TFormHandler {
     }
@@ -46,7 +46,8 @@ define(
       isMain: false,
       actionsContainerFinder: null,
       submitFormHandlers: null, //compatible with TFormHandler
-      deleteHandlers: null,  //compatible with
+      submitRequestHandlers: null,
+      deleteRequestHandlers: null,
     }
     class TForm extends React.Component {
       static csrf() {
@@ -119,7 +120,7 @@ define(
         if (this.TFormActions != null) {
           this.TFormActions.updateStateByForm();
         }
-        if(this.props.isMain) {
+        if (this.props.isMain) {
           var beanUrl = this.state.beanUri;
           if (_.isString(beanUrl) && !!beanUrl) {
             UrlUtil.HistoryUtility.replaceUrl(beanUrl);
@@ -156,7 +157,7 @@ define(
         var loading = this.state.loading;
         var showProgress = false;
         var loadingEle = null;
-        if(loading && showProgress) {
+        if (loading && showProgress) {
           loadingEle = (<div className="entity-form-container progress fresh-progress">
             <div className="progress-bar progress-bar-striped active" style={{width: "100%"}}></div>
           </div>);
@@ -246,33 +247,21 @@ define(
         var uri = new UriTemplate(tform.state.links.delete).fill(idObj);
         var queryUri = tform.state.links.query;
 
-        var delHandler = {
-          onSuccess: function () {
-          }
-        }
         var delOpts = {
           url: uri,
           csrf: csrf,
           type: entityContext.type,
           ceilingType: entityContext.ceilingType,
-          successRedirect: isMain,
-          deleteExtraHandler: delHandler
         };
 
         require([EntityModalSpecsPath], function (EMSpecs) {
           class DeleteSpec extends EMSpecs.Delete {
-            onDeleteSuccess(data, opts) {
-              super.onDeleteSuccess(data, opts);
-            }
-
-            onDeleteFail(data, opts) {
-              super.onDeleteFail(data, opts);
-              console.log('Todo: Handle deleting fail');
-            }
           }
 
           var ms = ModalStack.getPageStack();
-          ms.pushModalSpec(new DeleteSpec(delOpts));
+          ms.pushModalSpec(new DeleteSpec(delOpts).pushHandlers({
+            deleteRequestHandlers: tform.props.deleteRequestHandlers
+          }));
         });
       }
 
@@ -280,14 +269,15 @@ define(
       doSubmit() {
         function formSubmitHandler(tform) {
           var handlers = _.without(_.flatten([tform.props.submitFormHandlers]), null, undefined);
-          handlers = ((handlers.length > 0) ? handlers : [TForm.defaultSubmitHandler]);
-          var tformHandler = HandlerExecutor(new TFormSubmitHandler(), handlers);
+          handlers = ((handlers.length > 0) ? handlers : [TForm.defaultSubmitFormHandler]);
+          var tformHandler = HandlerExecutor(new SubmitFormHandler(), handlers);
           return tformHandler;
         }
 
-        var formdata = this.formData(true);
-        var currentAction = this.state.currentAction;
-        var links = this.state.links;
+        var tform = this;
+        var formdata = tform.formData(true);
+        var currentAction = tform.state.currentAction;
+        var links = tform.state.links;
         var uri = "";
         var requestHandlerBase;
         var method;
@@ -307,10 +297,19 @@ define(
             throw new Error("TForm submit action not supported");
         }
 
+        var loadingHandler = {
+          onWillRequest: function () {
+            tform.setState({loading: true});
+          },
+          onResultWillProcess: function () {
+            tform.setState({loading: false});
+          }
+        }
         var submitParam = {url: uri, entityData: formdata};
-        var tformHandler = formSubmitHandler(this);
-        var formRequestHandler = new TFormRequestHandler(this, tformHandler);
-        EntityRequest[method](submitParam, new requestHandlerBase(), formRequestHandler);
+        var tformHandler = formSubmitHandler(tform);
+        var formRequestHandler = new TFormRequestHandler(tform, tformHandler);
+        EntityRequest[method](submitParam, new requestHandlerBase(), loadingHandler, formRequestHandler,
+          tform.props.submitRequestHandlers);
       }
 
       onEventTFormSubmit(event) {
@@ -322,8 +321,7 @@ define(
     }
     TForm.defaultProps = TFormDefaultProps;
 
-    TForm.defaultSubmitHandler = [TFormSubmitHandlers.UpdateOnFail,
-      TFormSubmitHandlers.ReloadOnSuccess];
+    TForm.defaultSubmitFormHandler = [TFormSubmitHandlers.UpdateOnFail];
     TForm.defaultDeleteHandler = {
       onSuccess: function (tform, response) {
         console.log("success");
@@ -347,6 +345,7 @@ define(
     }
 
     exports.TForm = TForm;
+    exports.TFormRequestHandler = TFormRequestHandler;
     exports.TFormSubmitHandlers = TFormSubmitHandlers;
     exports.renderForm = renderForm;
   });

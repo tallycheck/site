@@ -8,10 +8,16 @@ define(
       onWillRequest(tform) {
       }
 
+      onResultWillProcess(success, tform, response) {
+      }
+
       onSuccess(tform, response) {
       }
 
       onFail(tform, response) {
+      }
+
+      onResultDidProcess(success, tform, response) {
       }
 
       onError(tform) {
@@ -31,12 +37,20 @@ define(
         this.tformHandler.onWillRequest(this.tform);
       }
 
+      onResultWillProcess(success, data, param) {
+        this.tformHandler.onResultWillProcess(success, this.tform, data);
+      }
+
       onSuccess(data, param) {
         this.tformHandler.onSuccess(this.tform, data);
       }
 
       onFail(data, param) {
         this.tformHandler.onFail(this.tform, data);
+      }
+
+      onResultDidProcess(success, data, param) {
+        this.tformHandler.onResultDidProcess(success, this.tform, data);
       }
 
       onError() {
@@ -69,24 +83,25 @@ define(
       UpdateOnFail: {
         onFail: function (tform, response) {
           tform.updateStateBy(response.data);
-        }
+        },
       },
       ReloadOnSuccess: {
-        onWillRequest: function (tform){
-          tform.setState({loading: true});
-        },
         onSuccess: function (tform, response) {
-          tform.setState({loading: true}, function(){
-            var url = redirectUrl(response);
-            var readParam = {url : url};
-            EntityRequest.read(readParam, null, {
-              onSuccess:function(data, param){
-                tform.updateStateBy(data.data, true);
-              },
-              onFail:function(data, param){
-                window.location.replace(url);
-              }
-            });
+          var url = redirectUrl(response);
+          var readParam = {url: url};
+          EntityRequest.read(readParam, null, {
+            onWillRequest: function (){
+              tform.setState({loading: true});
+            },
+            onSuccess: function (data, param) {
+              tform.updateStateBy(data.data, true);
+            },
+            onFail: function (data, param) {
+              window.location.replace(url);
+            },
+            onComplete: function () {
+              tform.setState({loading: false});
+            }
           });
         },
       },

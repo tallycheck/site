@@ -18,12 +18,20 @@ define(
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action will request");
       }
 
+      onResultWillProcess(success, data, param) {
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action Will Handle Result: " + success ? "success" : "fail");
+      }
+
       onSuccess(data, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action success");
       }
 
       onFail(data, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action fail");
+      }
+
+      onResultDidProcess(success, data, param) {
+        Debugger.log(ENABLE_REQUEST_DEBUG, "Action Result: " + success ? "success" : "fail");
       }
 
       onError() {
@@ -53,11 +61,14 @@ define(
         },
         success: function (data, textStatus, jqXHR, opts) {
           var response = data;
-          if (response.success) {
+          var success = !!response.success;
+          fHandler.onResultWillProcess(success, response, fParam);
+          if (success) {
             fHandler.onSuccess(response, fParam);
           } else {
             fHandler.onFail(response, fParam);
           }
+          fHandler.onResultDidProcess(success, response, fParam);
         },
         error: function () {
           fHandler.onError();

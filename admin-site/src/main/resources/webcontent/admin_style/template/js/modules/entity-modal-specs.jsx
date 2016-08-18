@@ -30,45 +30,19 @@ define(
     var ModalRequestHandler = ModalHandlersComp.ModalRequestHandler;
     var ModalHandlers = ModalHandlersComp.ModalHandlers;
 
-    var ModalHanderProxyHandler = {
-      get: function(target, name){
-        var modal = target.modal;
-        var main = target.main;
-        var extra = target.extra;
-        var mainFunc = main[name];
-        var extraFunc = extra[name];
-        if(_.isFunction(mainFunc) && _.isFunction(extraFunc)){
-          return function(){
-            var caller = arguments.caller;
-            var ret = mainFunc.apply(caller, arguments);
-            var margs = [modal].concat(arguments);
-            extraFunc.apply(caller, margs);
-            return ret;
-          }
-        }
-        return mainFunc;
-      }
-    };
-
-    var EmptyRequestHandler = { //compatible with RequestHandler
-      onSuccess: function (data, param) {},
-      onFail: function (data, param) {},
-      onError: function () {},
-      onComplete: function () {}
-    }
-
-    class ViewEntityContentBase extends ModalContents.ModalContent{
+    class ViewEntityContentBase extends ModalContents.ModalContent {
       constructor(options, response) {
-        var opts = _.extend({}, options, {response : response});
+        var opts = _.extend({}, options, {response: response});
         super(opts);
       }
 
-      actionsContainerFinder () {
-        function func(_this){
+      actionsContainerFinder() {
+        function func(_this) {
           var modal = this.modal;
           var div = modal.refs.tActionsContainer;
           return div;
         }
+
         return _.bind(func, this);
       }
 
@@ -93,37 +67,23 @@ define(
     }
 
     class CreateSpec extends ModalSpecBase {
-      constructor(options) {
-        var opts = _.extend({}, options);
-        var TForm = TFormComp.TForm;
-        opts.createSubmitHandler = _.extend({},
-          TForm.defaultSubmitHandler,
-          options.createSubmitHandler);
-        super(opts);
+      constructor(options, handlers) {
+        super(options, handlers);
       }
 
       defaultOptions() {
         return {
           url: '',
-          createGetExtraHandler: { //compatible with RequestHandler
-            //onSuccess: function (data, param) {},
-            //onFail: function (data, param) {},
-            //onError: function () {},
-            //onComplete: function () {}
-          },
-          //refer to TFormSubmitHandler
-          createSubmitHandler: {
-            //onSuccess(tform, response)
-            //onFail(tform, response)
-            //onError(tform)
-            //onComplete(tform)
-          },
-          createSubmitModalHandler: {
-            //onSuccess(modal, tform, response)
-            //onFail(modal, tform, response)
-            //onError(modal, tform)
-            //onComplete(modal, tform)
-          },
+        };
+      }
+
+      defaultHandlers() {
+        var TForm = TFormComp.TForm;
+        return {
+          createGetRequestHandlers: undefined,
+          createSubmitFormHandlers: [TForm.defaultSubmitFormHandler],
+          createSubmitModalHandlers: undefined,
+          createSubmitRequestHandlers: undefined,
         };
       }
 
@@ -150,27 +110,16 @@ define(
             var readParam = {
               url: specOptions.url,
             };
-            var extraHandler = _.extend({}, EmptyRequestHandler, specOptions.createGetExtraHandler);
-            class CreateGetHandler extends EntityRequest.CreateGetHandler {
-              onSuccess(data, param) {
+            var navContentRequestHandler = {
+              onSuccess: function (data, param) {
                 var response = data.data;
                 _spec.updateContent(_spec.viewEntityContent(response));
-                extraHandler.onSuccess(data, param);
               }
+            };
+            var requestHandler = HandlerExecutor(new EntityRequest.RequestHandler(),
+              specOptions.createGetRequestHandlers, navContentRequestHandler);
 
-              onFail(data, param) {
-                extraHandler.onFail(data, param);
-              }
-
-              onError() {
-                extraHandler.onError();
-              }
-
-              onComplete() {
-                extraHandler.onComplete();
-              }
-            }
-            EntityRequest.createGet(readParam, new CreateGetHandler());
+            EntityRequest.createGet(readParam, null, requestHandler);
           }
         }
         return new LoadingEntityContent();
@@ -186,20 +135,19 @@ define(
           getBody() {
             var TForm = TFormComp.TForm;
             var modal = this.modal;
+            var handlers = _spec.handlers;
             var actionsContainerFinder = this.actionsContainerFinder();
-            var formCreateSubmitHandler = _spec.options.createSubmitHandler;
-            var specCreateSubmitModalHandler = _spec.options.createSubmitModalHandler;
-            var wrapped = {
-              modal : modal,
-              main :  formCreateSubmitHandler,
-              extra :  specCreateSubmitModalHandler
-            }
-            var submitHandler = new Proxy(wrapped, ModalHanderProxyHandler);
+
+            var modalHandler = HandlerExecutor(new ModalHandler(),
+              _spec.handlers.createSubmitModalHandlers);
+            var createSubmitModalRequestHandler = new ModalRequestHandler(modal, modalHandler);
 
             var ele = React.createElement(TForm, {
               ref: "tForm",
               actionsContainerFinder: actionsContainerFinder,
-              submitHandler: submitHandler
+
+              submitFormHandlers: handlers.createSubmitFormHandlers,
+              submitRequestHandlers: [handlers.createSubmitRequestHandlers, createSubmitModalRequestHandler],
             });
             return ele;
           }
@@ -209,37 +157,25 @@ define(
     }
 
     class ReadSpec extends ModalSpecBase {
-      constructor(options) {
-        var opts = _.extend({}, options);
-        var TForm = TFormComp.TForm;
-        opts.updateSubmitHandler = _.extend({},
-          TForm.defaultSubmitHandler,
-          options.updateSubmitHandler);
-        super(opts);
+      constructor(options, handlers) {
+        super(options, handlers);
       }
 
       defaultOptions() {
         return {
           url: '',
-          readExtraHandler: { //compatible with RequestHandler
-            //onSuccess: function (data, param) {},
-            //onFail: function (data, param) {},
-            //onError: function () {},
-            //onComplete: function () {}
-          },
-          //refer to TFormSubmitHandler
-          updateSubmitHandler: {
-            //onSuccess(tform, response)
-            //onFail(tform, response)
-            //onError(tform)
-            //onComplete(tform)
-          },
-          updateSubmitModalHandler: {
-            //onSuccess(modal, tform, response)
-            //onFail(modal, tform, response)
-            //onError(modal, tform)
-            //onComplete(modal, tform)
-          },
+        }
+      }
+
+      defaultHandlers() {
+        var TForm = TFormComp.TForm;
+        return {
+          readRequestHandlers: undefined,
+          updateSubmitFormHandlers: [TForm.defaultSubmitFormHandler],
+          updateSubmitModalHandlers: undefined,
+          updateSubmitRequestHandlers: undefined,
+          deleteModalHandlers: undefined,
+          deleteRequestHandlers: undefined,
         };
       }
 
@@ -266,33 +202,25 @@ define(
             var readParam = {
               url: specOptions.url,
             }
-            var extraHandler = _.extend({}, EmptyRequestHandler, specOptions.readExtraHandler);
-            class ReadHandler extends EntityRequest.ReadHandler {
-              onSuccess(data, param) {
+            var navContentRequestHandler = {
+              onSuccess: function (data, param) {
                 var response = data.data;
                 _spec.updateContent(_spec.viewEntityContent(response));
-                extraHandler.onSuccess(data, param);
-              }
-
-              onFail(data, param) {
+              },
+              onFail: function (data, param) {
                 var response = data.data;
                 _spec.updateContent(_spec.viewReadFailContent(response));
-                extraHandler.onFail(data, param);
               }
+            };
+            var requestHandler = HandlerExecutor(new EntityRequest.RequestHandler(),
+              specOptions.readRequestHandlers, navContentRequestHandler);
 
-              onError() {
-                extraHandler.onError();
-              }
-
-              onComplete() {
-                extraHandler.onComplete();
-              }
-            }
-            EntityRequest.read(readParam, new ReadHandler());
+            EntityRequest.read(readParam, null, requestHandler);
           }
         }
         return new LoadingEntityContent();
       }
+
       viewEntityContent(response) {
         var _spec = this;
         class ViewEntityContent extends ViewEntityContentBase {
@@ -303,27 +231,31 @@ define(
           getBody() {
             var TForm = TFormComp.TForm;
             var modal = this.modal;
+            var handlers = _spec.handlers;
             var actionsContainerFinder = this.actionsContainerFinder();
-            var formUpdateSubmitHandler = _spec.options.updateSubmitHandler;
-            var specUpdateSubmitModalHandler = _spec.options.updateSubmitModalHandler;
-            var wrapped = {
-              modal : modal,
-              main :  formUpdateSubmitHandler,
-              extra :  specUpdateSubmitModalHandler
-            }
-            var submitHandler = new Proxy(wrapped, ModalHanderProxyHandler);
+
+            var submitModalHandler = HandlerExecutor(new ModalHandler(),
+              _spec.handlers.updateSubmitModalHandlers);
+            var updateSubmitModalRequestHandler = new ModalRequestHandler(modal, submitModalHandler);
+
+            var deleteModalHandler = HandlerExecutor(new ModalHandler(), handlers.deleteModalHandlers);
+            var deleteModalRequestHandler = new ModalRequestHandler(modal, deleteModalHandler);
 
             var ele = React.createElement(TForm, {
               ref: "tForm",
               actionsContainerFinder: actionsContainerFinder,
-              submitHandler: submitHandler
+
+              submitFormHandlers: handlers.updateSubmitFormHandlers,
+              submitRequestHandlers: [handlers.updateSubmitRequestHandlers, updateSubmitModalRequestHandler],
+              deleteRequestHandlers: [deleteModalRequestHandler, handlers.deleteRequestHandlers],
             });
             return ele;
           }
         }
         return new ViewEntityContent();
       }
-      viewReadFailContent(response){
+
+      viewReadFailContent(response) {
         class ReadFailContent extends ModalContents.MessageContent {
           constructor() {
             super({
@@ -333,7 +265,7 @@ define(
 
           getBody() {
             var errors = response.errors.global;
-            var eEles = _.map(errors, function(error, i){
+            var eEles = _.map(errors, function (error, i) {
               return <span key={i} className="modal-error">{error}</span>
             });
             return (<div className="message">
@@ -360,9 +292,13 @@ define(
           csrf: undefined,
           type: undefined,
           ceilingType: undefined,
-          deleteListener:undefined,
-          deleteExtraHandler: undefined, //RequestHandler
         };
+      }
+
+      defaultHandlers() {
+        return {
+          deleteRequestHandlers: undefined
+        }
       }
 
       firstContent() {
@@ -411,16 +347,14 @@ define(
               csrf: specOptions.csrf,
               type: specOptions.type,
               ceilingType: specOptions.ceilingType,
-              successRedirect: specOptions.successRedirect
             };
-            var extraHandler = specOptions.deleteExtraHandler;
-            var modalHandler = HandlerExecutor(new ModalHandler(), [extraHandler]);
-            var modalRequestHandler = new ModalRequestHandler(modal, modalHandler);
+            var handlers = _spec.handlers;
+            var modalRequestHandler = null;//new ModalRequestHandler(modal, modalHandler);
             var reactOnResponse = {
-              onSuccess : function(data, opts) {
+              onSuccess: function (data, opts) {
                 modal.hide();
               },
-              onFail: function(data, opts) {
+              onFail: function (data, opts) {
                 var errors = (data.data) ? data.data.errors : null;
                 if (errors)
                   errors = errors.global;
@@ -431,7 +365,7 @@ define(
                 _spec.updateContent(_spec.deleteErrorContent(deleteErrorOption));
               }
             }
-            EntityRequest.delete(delParam, null, [modalRequestHandler, reactOnResponse, specOptions.deleteListener]);
+            EntityRequest.delete(delParam, null, [modalRequestHandler, reactOnResponse, handlers.deleteRequestHandlers]);
           }
         }
         return new DeletingContent();
