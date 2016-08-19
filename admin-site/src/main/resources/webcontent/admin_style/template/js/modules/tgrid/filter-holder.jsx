@@ -5,12 +5,15 @@ define(
     var $ = require('jquery');
     var _ = require('underscore');
     var basic = require('basic');
+    var Debugger = require('debugger');
     var TFilters = require('jsx!./filters');
     var EntityMsg = require('i18n!../nls/entity');
     var EntityInfo = require('entity-info');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
+
+    var ENABLE_STATE_UPDATE_LOG = false;
 
     var Orders = TFilters.Orders;
 
@@ -90,7 +93,7 @@ define(
         var ps = this.state;
         var ns = nextState;
 
-        console.log("holder will update: " + this.changeString(ps, ns));
+        Debugger.log(ENABLE_STATE_UPDATE_LOG, "holder will update: " + this.changeString(ps, ns));
       }
       componentDidUpdate(prevProps, prevState){
         var grid = this.props.grid;
@@ -108,11 +111,11 @@ define(
         if(ps.version == version_init){
           return;
         }
-        console.log("holder did update: " + this.changeString(ps, ns));
+        Debugger.log(ENABLE_STATE_UPDATE_LOG, "holder did update: " + this.changeString(ps, ns));
         var requireUpdate = (ps.filterVal != ns.filterVal || ps.sorterVal != ns.sorterVal);
         if(requireUpdate || this.dirty || ps.version == version_do_load){
           this.dirty = true;
-          console.log("Fire do filter: " + this.changeString(ps, ns));
+          Debugger.log(ENABLE_STATE_UPDATE_LOG, "Fire do filter: " + this.changeString(ps, ns));
           grid.requestDoFilterByFilters(this);
         }
       }

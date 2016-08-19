@@ -11,26 +11,26 @@ define(
     var UrlUtil = require('url-utility');
     var HandlerUtils = require('handler-utils');
     var actionHandlerExecutor = HandlerUtils.handlerExecutor;
-    var ENABLE_REQUEST_DEBUG = true;
+    var ENABLE_REQUEST_DEBUG = false;
 
     class RequestHandler {
       onWillRequest(param){
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action will request");
       }
 
-      onResultWillProcess(success, data, param) {
+      onResultWillProcess(success, response, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, ("Action Will Process Result: " + (success ? "success" : "fail")));
       }
 
-      onSuccess(data, param) {
+      onSuccess(response, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action success");
       }
 
-      onFail(data, param) {
+      onFail(response, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, "Action fail");
       }
 
-      onResultDidProcess(success, data, param) {
+      onResultDidProcess(success, response, param) {
         Debugger.log(ENABLE_REQUEST_DEBUG, ("Action Did Process Result: " + (success ? "success" : "fail")));
       }
 

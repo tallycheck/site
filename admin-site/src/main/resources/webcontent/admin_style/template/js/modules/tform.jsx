@@ -37,15 +37,17 @@ define(
     var DeleteTFormHandlers = TFormHandlerComp.DeleteTFormHandlers;
 
 
-    class SubmitFormHandler extends TFormHandler {
-    }
-
     var TFormDefaultProps = {
       isMain: false,
       actionsContainerFinder: null,
       submitFormHandlers: null, //compatible with TFormHandler
       submitRequestHandlers: null,
       deleteRequestHandlers: null,
+    }
+    var TFormStatics = {
+      defaultProps: TFormDefaultProps,
+
+      defaultSubmitFormHandler: [SubmitTFormHandlers.UpdateOnFail],
     }
     class TForm extends React.Component {
       static csrf() {
@@ -263,12 +265,11 @@ define(
         });
       }
 
-
       doSubmit() {
-        function formSubmitHandler(tform) {
+        function submitTFormHandler(tform) {
           var handlers = _.without(_.flatten([tform.props.submitFormHandlers]), null, undefined);
           handlers = ((handlers.length > 0) ? handlers : [TForm.defaultSubmitFormHandler]);
-          var tformHandler = HandlerExecutor(new SubmitFormHandler(), handlers);
+          var tformHandler = HandlerExecutor(new TFormHandler(), handlers);
           return tformHandler;
         }
 
@@ -277,18 +278,15 @@ define(
         var currentAction = tform.state.currentAction;
         var links = tform.state.links;
         var uri = "";
-        var requestHandlerBase;
         var method;
         switch (currentAction) {
           case "create":
             uri = links.self;
-            requestHandlerBase = EntityRequest.CreateHandler;
             method = 'create';
             break;
           case "update":
           case "read":
             uri = links.self;
-            requestHandlerBase = EntityRequest.UpdateHandler;
             method = 'update';
             break;
           default:
@@ -304,9 +302,9 @@ define(
           }
         }
         var submitParam = {url: uri, entityData: formdata};
-        var tformHandler = formSubmitHandler(tform);
-        var formRequestHandler = new TFormRequestHandler(tform, tformHandler);
-        EntityRequest[method](submitParam, new requestHandlerBase(), loadingHandler, formRequestHandler,
+        var tformHandler = submitTFormHandler(tform);
+        var formRequestHandler = TFormRequestHandler(tform, tformHandler);
+        EntityRequest[method](submitParam, null, loadingHandler, formRequestHandler,
           tform.props.submitRequestHandlers);
       }
 
@@ -317,23 +315,7 @@ define(
         event.preventDefault();
       }
     }
-    TForm.defaultProps = TFormDefaultProps;
-
-    TForm.defaultSubmitFormHandler = [SubmitTFormHandlers.UpdateOnFail];
-    TForm.defaultDeleteHandler = {
-      onSuccess: function (tform, response) {
-        console.log("success");
-      },
-      onFail: function (tform, response) {
-        console.log("fail");
-      },
-      onError: function (tform) {
-        console.log("error");
-      },
-      onComplete: function (tform) {
-        console.log("complete");
-      }
-    }
+    _.extend(TForm, TFormStatics);
 
     function renderForm(beanResult, div, isMain) {
       var formEle = <TForm isMain={isMain}/>;

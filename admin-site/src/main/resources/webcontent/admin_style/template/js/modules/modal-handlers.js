@@ -2,13 +2,14 @@ define(
   function(require, exports, module) {
     var Debugger = require('debugger');
     var EntityRequest = require('entity-request');
+    var HandlerUtils = require('handler-utils');
     var ENABLE_HANDLER_DEBUG = true;
 
     class ModalHandler {
       onWillRequest(modal) {
       }
 
-      onResultWillProcess(success, data, param) {
+      onResultWillProcess(modal, success, response) {
       }
 
       onSuccess(modal, response) {
@@ -17,7 +18,7 @@ define(
       onFail(modal, response) {
       }
 
-      onResultDidProcess(success, data, param) {
+      onResultDidProcess(modal, success, response) {
       }
 
       onError(modal) {
@@ -27,9 +28,13 @@ define(
       }
     }
 
-    class ModalRequestHandler {
+
+    class _ModalRequestHandler {
       constructor(modal, modalHandler) {
         this.modal = modal;
+        if(arguments.length != 2){
+          throw new Error("Parameter size error.");
+        }
         this.modalHandler = modalHandler;
       }
 
@@ -38,7 +43,7 @@ define(
       }
 
       onResultWillProcess(success, data, param) {
-        this.modalHandler.onResultWillProcess(success, this.modal, data);
+        this.modalHandler.onResultWillProcess(this.modal, success, data);
       }
 
       onSuccess(data, param) {
@@ -50,7 +55,7 @@ define(
       }
 
       onResultDidProcess(success, data, param) {
-        this.modalHandler.onResultDidProcess(success, this.modal, data);
+        this.modalHandler.onResultDidProcess(this.modal, success, data);
       }
 
       onError() {
@@ -61,6 +66,16 @@ define(
         this.modalHandler.onComplete(this.modal);
       }
     }
+
+    var ModalRequestHandlerComplex = function(modal, modalHandler){
+      return new _ModalRequestHandler(modal, modalHandler);
+    }
+
+    function ModalRequestHandlerEasy(modal, modalHandler) {
+      return HandlerUtils.insertLeadingArgumentHandler([modal], modalHandler);
+    }
+
+    var ModalRequestHandler = ModalRequestHandlerEasy;
 
     var ModalHandlers = {
       HideOnSuccess: {

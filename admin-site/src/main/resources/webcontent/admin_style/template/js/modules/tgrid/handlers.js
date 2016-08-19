@@ -1,10 +1,12 @@
 define(
   function(require, exports, module) {
+    var HandlerUtils = require('handler-utils');
+
     class TGridHandler {
       onWillRequest(tgrid) {
       }
 
-      onResultWillProcess(success, tform, response) {
+      onResultWillProcess(tgrid, success, response) {
       }
 
       onSuccess(tgrid, response) {
@@ -13,7 +15,7 @@ define(
       onFail(tgrid, response) {
       }
 
-      onResultDidProcess(success, tform, response) {
+      onResultDidProcess(tgrid, success, response) {
       }
 
       onError(tgrid) {
@@ -23,18 +25,25 @@ define(
       }
     }
 
-    class TGridRequestHandler {
+    function TGridRequestHandler(tgrid, tgridHandler) {
+      return HandlerUtils.insertLeadingArgumentHandler([tgrid], tgridHandler);
+    }
+
+    class TGridRequestHandlerCls {
       constructor(tgrid, tgridHandler) {
         this.tgrid = tgrid;
+        if (arguments.length != 2) {
+          throw new Error("Parameter size error.");
+        }
         this.tgridHandler = tgridHandler;
       }
 
-      onWillRequest(param){
+      onWillRequest(param) {
         this.tgridHandler.onWillRequest(this.tgrid);
       }
 
       onResultWillProcess(success, data, param) {
-        this.tgridHandler.onResultWillProcess(success, this.tform, data);
+        this.tgridHandler.onResultWillProcess(this.tgrid, success, data);
       }
 
       onSuccess(data, param) {
@@ -46,7 +55,7 @@ define(
       }
 
       onResultDidProcess(success, data, param) {
-        this.tgridHandler.onResultDidProcess(success, this.tform, data);
+        this.tgridHandler.onResultDidProcess(this.tgrid, success, data);
       }
 
       onError() {
@@ -59,12 +68,12 @@ define(
     }
 
     var TGridSubmitHandlers = {
-      UpdateOnFail : {
+      UpdateOnFail: {
         onFail: function (tgrid, response) {
           tgrid.updateStateBy(response.data);
         }
       },
-      RedirectOnSuccess :{
+      RedirectOnSuccess: {
         onFail: function (tgrid, response) {
           tgrid.updateStateBy(response.data);
         }
@@ -72,6 +81,6 @@ define(
     }
 
     exports.TGridHandler = TGridHandler;
-    exports.TGridRequestHandler=TGridRequestHandler;
+    exports.TGridRequestHandler = TGridRequestHandler;
     exports.TGridSubmitHandlers = TGridSubmitHandlers;
   });

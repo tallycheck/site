@@ -7,7 +7,6 @@ define(
     var _ = require('underscore');
     var basic = require('basic');
     var Debugger = require('debugger');
-    var dm = require('datamap');
     var math = require('math');
     var modal = require('jsx!modules/modal');
     var UriTemplate = require('UriTemplate');
@@ -20,13 +19,13 @@ define(
     var doTimeout = require('jquery.dotimeout');
     var EntityMsg = require('i18n!./nls/entity');
     var ResizeSensor = require('ResizeSensor');
-    var ajax = require('ajax');
     var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
     var EntityRequest = require('entity-request');
     var EntityResponse = require('entity-response');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
+
     var Range = math.Range;
     var Ranges = math.Ranges;
     var Body = TGridBody.Body;

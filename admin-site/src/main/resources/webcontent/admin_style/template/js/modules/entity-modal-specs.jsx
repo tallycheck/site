@@ -140,7 +140,7 @@ define(
 
             var modalHandler = HandlerExecutor(new ModalHandler(),
               _spec.handlers.createSubmitModalHandlers);
-            var createSubmitModalRequestHandler = new ModalRequestHandler(modal, modalHandler);
+            var createSubmitModalRequestHandler = ModalRequestHandler(modal, modalHandler);
 
             var ele = React.createElement(TForm, {
               ref: "tForm",
@@ -236,10 +236,10 @@ define(
 
             var submitModalHandler = HandlerExecutor(new ModalHandler(),
               _spec.handlers.updateSubmitModalHandlers);
-            var updateSubmitModalRequestHandler = new ModalRequestHandler(modal, submitModalHandler);
+            var updateSubmitModalRequestHandler = ModalRequestHandler(modal, submitModalHandler);
 
             var deleteModalHandler = HandlerExecutor(new ModalHandler(), handlers.deleteModalHandlers);
-            var deleteModalRequestHandler = new ModalRequestHandler(modal, deleteModalHandler);
+            var deleteModalRequestHandler = ModalRequestHandler(modal, deleteModalHandler);
 
             var ele = React.createElement(TForm, {
               ref: "tForm",
@@ -349,7 +349,7 @@ define(
               ceilingType: specOptions.ceilingType,
             };
             var handlers = _spec.handlers;
-            var modalRequestHandler = null;//new ModalRequestHandler(modal, modalHandler);
+            var modalRequestHandler = null;//ModalRequestHandler(modal, modalHandler);
             var reactOnResponse = {
               onSuccess: function (data, opts) {
                 modal.hide();

@@ -2,13 +2,14 @@ define(
   function(require, exports, module) {
     var Debugger = require('debugger');
     var EntityRequest = require('entity-request');
+    var HandlerUtils = require('handler-utils');
     var ENABLE_HANDLER_DEBUG = true;
 
     class TFormHandler {
       onWillRequest(tform) {
       }
 
-      onResultWillProcess(success, tform, response) {
+      onResultWillProcess(tform, success, response) {
       }
 
       onSuccess(tform, response) {
@@ -17,7 +18,7 @@ define(
       onFail(tform, response) {
       }
 
-      onResultDidProcess(success, tform, response) {
+      onResultDidProcess(tform, success, response) {
       }
 
       onError(tform) {
@@ -27,9 +28,16 @@ define(
       }
     }
 
-    class TFormRequestHandler {
+    function TFormRequestHandler(tform, tformHandler) {
+      return HandlerUtils.insertLeadingArgumentHandler([tform], tformHandler);
+    }
+
+    class TFormRequestHandlerCls {
       constructor(tform, tformHandler) {
         this.tform = tform;
+        if(arguments.length != 2){
+          throw new Error("Parameter size error.");
+        }
         this.tformHandler = tformHandler;
       }
 
@@ -38,7 +46,7 @@ define(
       }
 
       onResultWillProcess(success, data, param) {
-        this.tformHandler.onResultWillProcess(success, this.tform, data);
+        this.tformHandler.onResultWillProcess(this.tform, success, data);
       }
 
       onSuccess(data, param) {
@@ -50,7 +58,7 @@ define(
       }
 
       onResultDidProcess(success, data, param) {
-        this.tformHandler.onResultDidProcess(success, this.tform, data);
+        this.tformHandler.onResultDidProcess(this.tform, success, data);
       }
 
       onError() {
