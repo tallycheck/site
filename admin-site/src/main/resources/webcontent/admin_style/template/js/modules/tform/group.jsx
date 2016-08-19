@@ -12,7 +12,7 @@ define(
     var basic = require('basic');
     var UriTemplate = require('UriTemplate');
     var FieldsModule = require('jsx!./fields');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
 
     var React = require('react');
     var ReactDOM = require('react-dom');

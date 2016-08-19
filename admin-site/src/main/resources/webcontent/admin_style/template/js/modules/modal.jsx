@@ -9,8 +9,8 @@ define(
     var $ = require('jquery');
     var _ = require('underscore');
     var BS = require('bootstrap');
-    var entityText = require('i18n!nls/entityText');
-    var commonText = require('i18n!nls/commonText');
+    var EntityMsg = require('i18n!./nls/entity');
+    var CommonMsg = require('i18n!./nls/common');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -48,12 +48,12 @@ define(
       getGenericFooter(positive, negative, close) {
         var posBtn = positive ?
           <button type="button" className="btn btn-default btn-positive" onClick={this.onPositiveButtonClick}>
-            {commonText.ok}</button> : <span/>;
+            {CommonMsg.ok}</button> : <span/>;
         var negBtn = negative ?
           <button type="button" className="btn btn-default btn-negative" onClick={this.onNegativeButtonClick}
-                  data-dismiss="modal">{commonText.cancel}</button> : <span/>;
+                  data-dismiss="modal">{CommonMsg.cancel}</button> : <span/>;
         var closeBtn = close ?
-          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">{commonText.close}</button> : <span/>;
+          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">{CommonMsg.close}</button> : <span/>;
         var div = ( <div>
           {posBtn}
           {negBtn}
@@ -104,7 +104,7 @@ define(
 
       defaultOptions() {
         return {
-          titleText: commonText.loading,
+          titleText: CommonMsg.loading,
           bodyText: 'Undefined Loading Content'
         }
       }
@@ -135,7 +135,19 @@ define(
     class ModalSpecBase {
       constructor(options, handlers) {
         this.options = _.extend({}, this.defaultOptions(), options);
-        this.content = this.firstContent();
+        var _entryContent = this.entryContent;
+        if(_entryContent == null){
+          _entryContent = this.defaultEntryContent;
+        }
+        if(_.isFunction(_entryContent)){
+          _entryContent = _entryContent.apply(this);
+        }
+        if(_entryContent instanceof ModalContent){
+          this.content = _entryContent;
+        }else{
+          throw new Error("Entry Content Undefined");
+        }
+
         this.listenerRegistery = [];
         var defHandlers = this.defaultHandlers();
         this.handlers = _.mapObject(defHandlers, function(val, key) {
@@ -202,7 +214,7 @@ define(
         return this.content;
       }
 
-      firstContent() {
+      defaultEntryContent() {
         return new ModalContent();
       }
 

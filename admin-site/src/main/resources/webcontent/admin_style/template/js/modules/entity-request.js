@@ -19,7 +19,7 @@ define(
       }
 
       onResultWillProcess(success, data, param) {
-        Debugger.log(ENABLE_REQUEST_DEBUG, "Action Will Handle Result: " + success ? "success" : "fail");
+        Debugger.log(ENABLE_REQUEST_DEBUG, ("Action Will Process Result: " + (success ? "success" : "fail")));
       }
 
       onSuccess(data, param) {
@@ -31,7 +31,7 @@ define(
       }
 
       onResultDidProcess(success, data, param) {
-        Debugger.log(ENABLE_REQUEST_DEBUG, "Action Result: " + success ? "success" : "fail");
+        Debugger.log(ENABLE_REQUEST_DEBUG, ("Action Did Process Result: " + (success ? "success" : "fail")));
       }
 
       onError() {

@@ -7,8 +7,8 @@ define(
     var basic = require('basic');
     var dm = require('datamap');
     var modal = require('jsx!modules/modal');
-    var commonText = require('i18n!nls/commonText');
-    var entityText = require('i18n!nls/entityText');
+    var CommonMsg = require('i18n!../nls/common');
+    var EntityMsg = require('i18n!../nls/entity');
     var jui = require('jquery-ui');
     var juitp = require('jquery-ui-timepicker');
     var ModalStack = modal.ModalStack;
@@ -79,12 +79,12 @@ define(
           var celldisplaymodel = fi.cellModel;
           var tStr = [];
           if(celldisplaymodel.indexOf('date') >= 0){
-            var format = commonText.datepicker_format_date;
+            var format = CommonMsg.datepicker_format_date;
             var d = $.datepicker.formatDate(format, dateVal, {});
             tStr.push(d);
           }
           if(celldisplaymodel.indexOf('time') >= 0){
-            var format = commonText.datepicker_format_time;
+            var format = CommonMsg.datepicker_format_time;
             var d = $.datepicker.formatTime(format, { hour:dateVal.getHours(), minute:dateVal.getMinutes(), second:dateVal.getSeconds()}, {});
             tStr.push(d);
           }

@@ -5,7 +5,7 @@ define(
     var $ = require('jquery');
     var _ = require('underscore');
     var math = require('math');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
     var UrlUtil = require('url-utility');
     var dm = require('datamap');
     var UrlUtil = require('url-utility');

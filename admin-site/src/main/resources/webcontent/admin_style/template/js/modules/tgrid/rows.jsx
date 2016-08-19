@@ -8,7 +8,7 @@ define(
     var Cells = require('jsx!./cells');
     var dm = require('datamap');
     var math = require('math');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -74,7 +74,7 @@ define(
     });
     var NoRecordRow = React.createClass({
       render: function () {
-        var text = entityText["NO_RECORDS_FOUND"];
+        var text = EntityMsg["NO_RECORDS_FOUND"];
         var span = this.props.colspan;
         var hasRec = this.props.hasRecord;
         var style = {"display": hasRec ? "none" : ""};

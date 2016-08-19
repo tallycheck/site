@@ -79,7 +79,7 @@ define(
       }
     }
 
-    var TFormSubmitHandlers = {
+    var SubmitTFormHandlers = {
       UpdateOnFail: {
         onFail: function (tform, response) {
           tform.updateStateBy(response.data);
@@ -112,7 +112,7 @@ define(
       }
     }
 
-    var TFormDeleteHandlers = {
+    var DeleteTFormHandlers = {
       RedirectOnSuccess : {
         onSuccess: function (tform, response) {
           redirect(response);
@@ -122,6 +122,6 @@ define(
 
     exports.TFormHandler = TFormHandler;
     exports.TFormRequestHandler = TFormRequestHandler;
-    exports.TFormSubmitHandlers = TFormSubmitHandlers;
-    exports.TFormDeleteHandlers = TFormDeleteHandlers;
+    exports.SubmitTFormHandlers = SubmitTFormHandlers;
+    exports.DeleteTFormHandlers = DeleteTFormHandlers;
   });

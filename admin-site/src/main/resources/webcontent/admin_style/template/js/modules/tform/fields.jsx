@@ -5,8 +5,8 @@ define(
     var $ = require('jquery');
     var _ = require('underscore');
     var dm = require('datamap');
-    var commonText = require('i18n!nls/commonText');
-    var entityText = require('i18n!nls/entityText');
+    var CommonMsg = require('i18n!../nls/common');
+    var EntityMsg = require('i18n!../nls/entity');
     var jui = require('jquery-ui');
     var juitp = require('jquery-ui-timepicker');
     var summernote = require('summernote');
@@ -172,7 +172,7 @@ define(
           var fieldinfo = props.fieldinfo;
           var model = fieldinfo.model;
           var method = null;
-          var exOpts = {dateFormat: commonText.datepicker_format_date,
+          var exOpts = {dateFormat: CommonMsg.datepicker_format_date,
             onSelect : this.onSelect
           };
           switch(model){
@@ -181,16 +181,16 @@ define(
               break;
             case 'datetime':
               method = 'datetimepicker';
-              _.extend(exOpts, {showSecond: true,timeFormat : commonText.datepicker_format_time});
+              _.extend(exOpts, {showSecond: true,timeFormat : CommonMsg.datepicker_format_time});
               break;
             case 'datetimez' :
               method = 'datetimepicker';
-              _.extend(exOpts, {showSecond: true,timeFormat : commonText.datepicker_format_timez});
+              _.extend(exOpts, {showSecond: true,timeFormat : CommonMsg.datepicker_format_timez});
               break;
             default:
               throw new Error("DateModel unexpected.");
           }
-          var datepickerops = commonText.datepicker_localization;
+          var datepickerops = CommonMsg.datepicker_localization;
           _.extend(exOpts, datepickerops);
 
           this.state = _.extend({}, this.state, {
@@ -299,7 +299,7 @@ define(
         doRender(){
           var holder = this.props.holder;
           var bean = holder.bean;
-          var noneSpan = (<span className="display-value-none-selected" style={{display: "inline"}}>{entityText.FieldForeignKeyNotSelected}</span>);
+          var noneSpan = (<span className="display-value-none-selected" style={{display: "inline"}}>{EntityMsg.FieldForeignKeyNotSelected}</span>);
 
           return (<div className="foreign-key-value-container" data-entity-type="" data-id-field="" data-display-field="">
             {noneSpan}

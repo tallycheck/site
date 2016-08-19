@@ -3,7 +3,7 @@
 define(
   function(require, exports, module){
 
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -42,14 +42,14 @@ define(
                                               data-action={deleteAction} style={{display: "inline-block"}}
                                               disabled={this.state.processing}
                                               onClick={this.onDeleteClick}>
-          <span className="fa fa-times" aria-hidden="true"></span>{entityText.GRID_ACTION_delete}
+          <span className="fa fa-times" aria-hidden="true"></span>{EntityMsg.GRID_ACTION_delete}
         </button>) : <div/>;
         var spinnerStyle = {display: this.state.processing ? "inline-block" : "none"};
         var saveEle = showSave ? (<div className="action-control entity-action submit-entity"
                                        data-action={saveAction} data-action-url=""
                                        style={{display: "inline-block"}}>
             <button type="button" className="btn btn-default" disabled={this.state.processing} onClick={this.onSaveClick}>
-              <span className="fa fa-floppy-o" aria-hidden="true"></span>{entityText.GRID_ACTION_save}
+              <span className="fa fa-floppy-o" aria-hidden="true"></span>{EntityMsg.GRID_ACTION_save}
             </button>
           </div>
         ) : <div/>;

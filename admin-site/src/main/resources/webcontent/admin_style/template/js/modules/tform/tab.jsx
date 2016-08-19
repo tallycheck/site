@@ -12,7 +12,7 @@ define(
     var math = require('math');
     var basic = require('basic');
     var UriTemplate = require('UriTemplate');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
     var TFormGroup = require('jsx!./group');
 
     var React = require('react');

@@ -3,8 +3,13 @@
  */
 'use strict';
 
-define(['jquery', 'underscore', 'i18n!nls/menutext'],
-  function ($, _, menutext) {
+define(
+  function(require, exports, module) {
+
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var MenuMsg = require('i18n!./nls/menu');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
     var MenuEntry = React.createClass({
@@ -16,7 +21,7 @@ define(['jquery', 'underscore', 'i18n!nls/menutext'],
       render: function () {
         var entry = this.props.entry;
         var className = this.state.active ? 'active' : '';
-        return (<li className={className}><a href={entry.url}>{menutext[entry.name]}</a></li>);
+        return (<li className={className}><a href={entry.url}>{MenuMsg[entry.name]}</a></li>);
       }
     });
     var MenuGroup = React.createClass({
@@ -43,7 +48,7 @@ define(['jquery', 'underscore', 'i18n!nls/menutext'],
         return (
           <li className={groupClassName} ref="groupLi">
             <div className="menu-group-title" onClick={this.handleClick}>
-              <h5><i className={groupTitleCn}></i>{menutext[entryGroup.name]}</h5>
+              <h5><i className={groupTitleCn}></i>{MenuMsg[entryGroup.name]}</h5>
             </div>
             <div className="menu-group-content content">
               <ul>{entryNodes}</ul>
@@ -71,8 +76,8 @@ define(['jquery', 'underscore', 'i18n!nls/menutext'],
             <span >{entry.name}</span>
           </li>);
         }
-        var a = (entry.url == "") ? <span >{menutext[entry.name]}</span> :
-          <a href={entry.url}>{menutext[entry.name]}</a>;
+        var a = (entry.url == "") ? <span >{MenuMsg[entry.name]}</span> :
+          <a href={entry.url}>{MenuMsg[entry.name]}</a>;
         return (<li>{a}</li>);
       }
     });
@@ -131,8 +136,7 @@ define(['jquery', 'underscore', 'i18n!nls/menutext'],
       );
     }
 
-    return {
-      renderMenu: renderMenu,
-      renderBreadcrumb: renderBreadcrumb
-    };
+    exports.renderMenu = renderMenu;
+    exports.renderBreadcrumb = renderBreadcrumb;
+
   });

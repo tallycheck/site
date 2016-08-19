@@ -1,14 +1,14 @@
 'use strict';
 
-define(['jquery',
-    'underscore',
-    'math',
-    'i18n!nls/entityText',
-    'jsx!./rows',
-    'perfectScrollbar'],
-  function ($, _, math,
-            entityText, TGridRows,
-            Ps) {
+define(
+  function(require, exports, module) {
+    var $ = require('jquery');
+    var _ = require('underscore');
+    var math = require('math');
+    var EntityMsg = require('i18n!../nls/entity');
+    var TGridRows = require('jsx!./rows');
+    var Ps = require('perfectScrollbar');
+
     var React = require('react');
     var ReactDOM = require('react-dom');
 
@@ -247,7 +247,5 @@ define(['jquery',
       }
     });
 
-    return {
-      Body: Body
-    };
+    exports.Body = Body;
   });

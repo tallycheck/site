@@ -6,7 +6,7 @@ define(
     var _ = require('underscore');
     var basic = require('basic');
     var TFilters = require('jsx!./filters');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
     var UrlUtil = require('url-utility');
     var jui = require('jquery-ui');
 

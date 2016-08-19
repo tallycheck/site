@@ -18,7 +18,7 @@ define(
     var TGridBody = require('jsx!./tgrid/body');
     var TGridIndicator = require('jsx!./tgrid/indicator');
     var doTimeout = require('jquery.dotimeout');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!./nls/entity');
     var ResizeSensor = require('ResizeSensor');
     var ajax = require('ajax');
     var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
@@ -129,6 +129,10 @@ define(
           beansMap: beansMap
         };
         grid.setState(newState);
+      }
+
+      busy(){
+        return this.AJAX_LOCK != 0;
       }
 
       acquireLock() {

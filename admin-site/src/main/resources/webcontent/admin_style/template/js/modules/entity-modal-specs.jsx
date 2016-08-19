@@ -9,8 +9,8 @@ define(
     var modal = require('jsx!./modal');
     var toastr = require('toastr');
     var basic = require('basic');
-    var commonText = require('i18n!nls/commonText');
-    var entityText = require('i18n!nls/entityText');
+    var CommonMsg = require('i18n!./nls/common');
+    var EntityMsg = require('i18n!./nls/entity');
     var EntityRequest = require('entity-request');
     var HandlerUtils = require('handler-utils');
     var HandlerExecutor = HandlerUtils.handlerExecutor;
@@ -51,7 +51,7 @@ define(
         var action = response.action;
         var name = response.entity.bean.name;
         var friendlyType = response.infos.form.friendlyName;
-        var friendlyAction = entityText.ActionOnType(action, friendlyType);
+        var friendlyAction = EntityMsg.ActionOnType(action, friendlyType);
         return friendlyAction;
       }
 
@@ -87,7 +87,7 @@ define(
         };
       }
 
-      firstContent() {
+      entryContent() {
         return this.loadingContent();
       }
 
@@ -96,8 +96,8 @@ define(
         class LoadingEntityContent extends ModalContents.ProcessingContent {
           constructor() {
             super({
-              titleText: commonText.loading,
-              bodyText: commonText.loading
+              titleText: CommonMsg.loading,
+              bodyText: CommonMsg.loading
             });
           }
 
@@ -179,7 +179,7 @@ define(
         };
       }
 
-      firstContent() {
+      entryContent() {
         return this.loadingContent();
       }
 
@@ -188,8 +188,8 @@ define(
         class LoadingEntityContent extends ModalContents.ProcessingContent {
           constructor() {
             super({
-              titleText: commonText.loading,
-              bodyText: commonText.loading
+              titleText: CommonMsg.loading,
+              bodyText: CommonMsg.loading
             });
           }
 
@@ -259,7 +259,7 @@ define(
         class ReadFailContent extends ModalContents.MessageContent {
           constructor() {
             super({
-              titleText: entityText.readFailed
+              titleText: EntityMsg.readFailed
             });
           }
 
@@ -301,7 +301,7 @@ define(
         }
       }
 
-      firstContent() {
+      entryContent() {
         return this.deleteConfirmContent();
       }
 
@@ -310,8 +310,8 @@ define(
         class DeleteConfirmContent extends ModalContents.MessageContent {
           constructor() {
             super({
-              titleText: commonText.delete,
-              bodyText: commonText.deleteConfirm
+              titleText: CommonMsg.delete,
+              bodyText: CommonMsg.deleteConfirm
             });
           }
 
@@ -331,8 +331,8 @@ define(
         class DeletingContent extends ModalContents.ProcessingContent {
           constructor() {
             super({
-              titleText: commonText.delete,
-              bodyText: commonText.deleting
+              titleText: CommonMsg.delete,
+              bodyText: CommonMsg.deleting
             });
           }
 
@@ -359,7 +359,7 @@ define(
                 if (errors)
                   errors = errors.global;
                 var deleteErrorOption = {
-                  titleText: commonText.error,
+                  titleText: CommonMsg.error,
                   bodyText: errors
                 };
                 _spec.updateContent(_spec.deleteErrorContent(deleteErrorOption));

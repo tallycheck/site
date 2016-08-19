@@ -6,7 +6,7 @@ define(
     var _ = require('underscore');
     var basic = require('basic');
     var TFilters = require('jsx!./filters');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!../nls/entity');
     var EntityInfo = require('entity-info');
 
     var React = require('react');
@@ -116,6 +116,12 @@ define(
           grid.requestDoFilterByFilters(this);
         }
       }
+      setState(){
+        var grid = this.props.grid;
+        if(!grid.busy()){
+          super.setState.apply(this, arguments);
+        }
+      }
       onEventClickDocument(e) {
         if (ReactDOM.findDOMNode(this).contains(e.target)) {// Inside of the component.
         } else {
@@ -149,6 +155,11 @@ define(
       onEventResizerMouseDown (event){
         this.props.onResizerMouseDown(this, event.pageX);
       }
+      onKeyPress (event){
+        if (event.charCode == 13) {
+          this.onEventClickFilterButton();
+        }
+      }
       render  (){
         var fi = this.props.fieldinfo;
         var grid = this.props.grid;
@@ -181,7 +192,7 @@ define(
               <div className={"filter-sort-container " + sortActiveCn + " " + filterActiveCn}>
                 {sortIcon}
                 {filterIcon}
-                <ul ref="filterBox" style={{"display":this.state.filterShown ? "block" : "none"}} className="entity-filter no-hover">
+                <ul ref="filterBox" onKeyPress={this.onKeyPress.bind(this)} style={{"display":this.state.filterShown ? "block" : "none"}} className="entity-filter no-hover">
                   <FilterType ref="filter" fieldinfo={fi}  gridNamespace={gns}/>
                 </ul>
               </div>

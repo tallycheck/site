@@ -17,7 +17,7 @@ define(
     var TFormTabs = require('jsx!./tform/tab');
     var TFormActionsComp = require('jsx!./tform/actions');
     //var EMSpecs = require('jsx!./entity-modal-specs');
-    var entityText = require('i18n!nls/entityText');
+    var EntityMsg = require('i18n!./nls/entity');
     var ResizeSensor = require('ResizeSensor');
     var UrlUtil = require('url-utility');
     var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
@@ -33,13 +33,11 @@ define(
     var ModalStack = modal.ModalStack;
     var TFormHandler = TFormHandlerComp.TFormHandler;
     var TFormRequestHandler = TFormHandlerComp.TFormRequestHandler;
-    var TFormSubmitHandlers = TFormHandlerComp.TFormSubmitHandlers;
-    var TFormDeleteHandlers = TFormHandlerComp.TFormDeleteHandlers;
+    var SubmitTFormHandlers = TFormHandlerComp.SubmitTFormHandlers;
+    var DeleteTFormHandlers = TFormHandlerComp.DeleteTFormHandlers;
 
 
     class SubmitFormHandler extends TFormHandler {
-    }
-    class TFormDeleteHandler extends TFormHandler {
     }
 
     var TFormDefaultProps = {
@@ -321,7 +319,7 @@ define(
     }
     TForm.defaultProps = TFormDefaultProps;
 
-    TForm.defaultSubmitFormHandler = [TFormSubmitHandlers.UpdateOnFail];
+    TForm.defaultSubmitFormHandler = [SubmitTFormHandlers.UpdateOnFail];
     TForm.defaultDeleteHandler = {
       onSuccess: function (tform, response) {
         console.log("success");
@@ -346,6 +344,6 @@ define(
 
     exports.TForm = TForm;
     exports.TFormRequestHandler = TFormRequestHandler;
-    exports.TFormSubmitHandlers = TFormSubmitHandlers;
+    exports.SubmitTFormHandlers = SubmitTFormHandlers;
     exports.renderForm = renderForm;
   });
