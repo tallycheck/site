@@ -19,9 +19,10 @@ define(
     var doTimeout = require('jquery.dotimeout');
     var EntityMsg = require('i18n!./nls/entity');
     var ResizeSensor = require('ResizeSensor');
-    var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
     var EntityRequest = require('entity-request');
     var EntityResponse = require('entity-response');
+    var ModalHandlersPath = './modal-handlers';
+    var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -353,23 +354,12 @@ define(
         var body = this.refs.body;
         var readUri = this.state.links.create;
         var uri = readUri;
-        require([EntityModalSpecsPath], function (EMSpecs) {
+        require([EntityModalSpecsPath, ModalHandlersPath], function (EMSpecs, ModalHandlersComp) {
+          var ModalHandlers = ModalHandlersComp.ModalHandlers;
           var FormSubmitHandler = {
             onSuccess: function (tform, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update success ....");
               grid.doReload();
             },
-            onFail: function (tform, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail ....");
-            }
-          }
-          var FormSubmitModalHandler = {
-            onSuccess: function (modal, response) {
-              modal.hide();
-            },
-            onFail: function (modal, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail modal ....");
-            }
           }
           class CreateSpec extends EMSpecs.Create {
           }
@@ -378,7 +368,7 @@ define(
             url: uri,
           }).pushHandlers({
               createSubmitFormHandlers: FormSubmitHandler,
-              createSubmitModalHandlers: FormSubmitModalHandler
+              createSubmitModalHandlers: ModalHandlers.HideOnSuccess
             }));
         });
       }
@@ -390,45 +380,29 @@ define(
         var readUriTemplate = this.state.links.read;
         var idObj = this.state.entityContext.getStandardIdObject(bean);
         var uri = new UriTemplate(readUriTemplate).fill(idObj);
-        require([EntityModalSpecsPath], function (EMSpecs) {
+        require([EntityModalSpecsPath, ModalHandlersPath], function (EMSpecs, ModalHandlersComp) {
+          var ModalHandlers = ModalHandlersComp.ModalHandlers;
           var FormSubmitHandler = {
             onSuccess: function (tform, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update success ....");
               grid.doReload();
             },
-            onFail: function (tform, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail ....");
-            }
           }
-          var FormSubmitModalHandler = {
-            onSuccess: function (modal, response) {
-              modal.hide();
-            },
-            onFail: function (modal, response) {
-              Debugger.log(ENABLE_DEBUG_LOG_4_ACTION, "update fail modal ....");
-            }
-          }
-          class ReadSpec extends EMSpecs.Read {
-          }
-
           var deleteRequestHandler = {
             onSuccess: function () {
               body.selectIndex(-1);
               grid.doLoadByFilters();
             }
           }
-          var deleteModalHandler = {
-            onSuccess(modal, response) {
-              modal.hide();
-            }
+          class ReadSpec extends EMSpecs.Read {
           }
+
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new ReadSpec({
             url: uri,
           }).pushHandlers({
               updateSubmitFormHandlers: FormSubmitHandler,
-              updateSubmitModalHandlers: FormSubmitModalHandler,
-              deleteModalHandlers: deleteModalHandler,
+              updateSubmitModalHandlers: ModalHandlers.HideOnSuccess,
+              deleteModalHandlers: ModalHandlers.HideOnSuccess,
               deleteRequestHandlers: deleteRequestHandler
             }));
         });
@@ -451,7 +425,6 @@ define(
         };
 
         require([EntityModalSpecsPath], function (EMSpecs) {
-          var EMSpecs = require(EntityModalSpecsPath);
           class DeleteSpec extends EMSpecs.Delete {
           }
 

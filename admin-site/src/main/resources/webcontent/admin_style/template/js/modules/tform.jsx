@@ -11,6 +11,7 @@ define(
     var dm = require('datamap');
     var math = require('math');
     var modal = require('jsx!modules/modal');
+    var HandlersComp = require('./handlers');
     var UriTemplate = require('UriTemplate');
     var UrlUtil = require('url-utility');
     var TFormHandlerComp = require('./tform/handlers');
@@ -37,12 +38,16 @@ define(
     var DeleteTFormHandlers = TFormHandlerComp.DeleteTFormHandlers;
 
 
+    var TFormHandlersTemplate = {
+      submitFormHandlers: null, //compatible with TFormHandler
+      submitRequestHandlers: null,
+      deleteFormHandlers: null,
+      deleteRequestHandlers: null,
+    }
     var TFormDefaultProps = {
       isMain: false,
       actionsContainerFinder: null,
-      submitFormHandlers: null, //compatible with TFormHandler
-      submitRequestHandlers: null,
-      deleteRequestHandlers: null,
+      handlers : null,
     }
     var TFormStatics = {
       defaultProps: TFormDefaultProps,
@@ -73,7 +78,9 @@ define(
         };
 
         this.defaultActionsContainerFinder = this.defaultActionsContainerFinder.bind(this);
-        this.TFormActions = null
+        this.TFormActions = null;
+        this.handlers = new HandlersComp.HandlerContainer(TFormHandlersTemplate);
+        this.handlers.pushHandlers(props.handlers);
       }
 
       updateStateBy(beanResult, fresh) {
@@ -238,6 +245,12 @@ define(
       }
 
       doDelete() {
+        function deleteTFormHandler(tform) {
+          var handlers = _.without(_.flatten([tform.handlers.deleteFormHandlers]), null, undefined);
+          var tformHandler = HandlerExecutor(new TFormHandler(), handlers);
+          return tformHandler;
+        }
+
         var tform = this;
         var isMain = tform.props.isMain;
         var entity = tform.state.entity;
@@ -254,20 +267,22 @@ define(
           ceilingType: entityContext.ceilingType,
         };
 
+        var formRequestHandler = TFormRequestHandler(tform, deleteTFormHandler(tform));
+
         require([EntityModalSpecsPath], function (EMSpecs) {
           class DeleteSpec extends EMSpecs.Delete {
           }
 
           var ms = ModalStack.getPageStack();
           ms.pushModalSpec(new DeleteSpec(delOpts).pushHandlers({
-            deleteRequestHandlers: tform.props.deleteRequestHandlers
+            deleteRequestHandlers: [formRequestHandler, tform.handlers.deleteRequestHandlers]
           }));
         });
       }
 
       doSubmit() {
         function submitTFormHandler(tform) {
-          var handlers = _.without(_.flatten([tform.props.submitFormHandlers]), null, undefined);
+          var handlers = _.without(_.flatten([tform.handlers.submitFormHandlers]), null, undefined);
           handlers = ((handlers.length > 0) ? handlers : [TForm.defaultSubmitFormHandler]);
           var tformHandler = HandlerExecutor(new TFormHandler(), handlers);
           return tformHandler;
@@ -305,7 +320,7 @@ define(
         var tformHandler = submitTFormHandler(tform);
         var formRequestHandler = TFormRequestHandler(tform, tformHandler);
         EntityRequest[method](submitParam, null, loadingHandler, formRequestHandler,
-          tform.props.submitRequestHandlers);
+          tform.handlers.submitRequestHandlers);
       }
 
       onEventTFormSubmit(event) {
@@ -318,7 +333,13 @@ define(
     _.extend(TForm, TFormStatics);
 
     function renderForm(beanResult, div, isMain) {
-      var formEle = <TForm isMain={isMain}/>;
+      var handlers = {
+        submitFormHandlers: [SubmitTFormHandlers.UpdateOnFail, SubmitTFormHandlers.RedirectOnSuccess],
+          submitRequestHandlers: null,
+        deleteFormHandlers: [DeleteTFormHandlers.RedirectOnSuccess],
+      }
+
+      var formEle = <TForm isMain={isMain} handlers={handlers}/>;
       var tform = ReactDOM.render(formEle, div);
 
       tform.updateStateBy(beanResult);

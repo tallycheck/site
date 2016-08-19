@@ -145,9 +145,10 @@ define(
             var ele = React.createElement(TForm, {
               ref: "tForm",
               actionsContainerFinder: actionsContainerFinder,
-
-              submitFormHandlers: handlers.createSubmitFormHandlers,
-              submitRequestHandlers: [handlers.createSubmitRequestHandlers, createSubmitModalRequestHandler],
+              handlers :{
+                submitFormHandlers: handlers.createSubmitFormHandlers,
+                submitRequestHandlers: [handlers.createSubmitRequestHandlers, createSubmitModalRequestHandler],
+              }
             });
             return ele;
           }
@@ -244,10 +245,11 @@ define(
             var ele = React.createElement(TForm, {
               ref: "tForm",
               actionsContainerFinder: actionsContainerFinder,
-
-              submitFormHandlers: handlers.updateSubmitFormHandlers,
-              submitRequestHandlers: [handlers.updateSubmitRequestHandlers, updateSubmitModalRequestHandler],
-              deleteRequestHandlers: [deleteModalRequestHandler, handlers.deleteRequestHandlers],
+              handlers : {
+                submitFormHandlers: handlers.updateSubmitFormHandlers,
+                submitRequestHandlers: [handlers.updateSubmitRequestHandlers, updateSubmitModalRequestHandler],
+                deleteRequestHandlers: [deleteModalRequestHandler, handlers.deleteRequestHandlers],
+              }
             });
             return ele;
           }
