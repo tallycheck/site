@@ -4,7 +4,7 @@ define(
   function(require, exports, module) {
     var _ = require('underscore');
 
-    var BatchExecuteProxy = {
+    var LeadingExecuteProxy = {
       get: function(target, method, receiver){
         //target : {ah: null, extra: []}
         var _leader = target.leader;
@@ -34,14 +34,50 @@ define(
       }
     };
 
-    function batchExecutor(leader, followers /*optional*/){
+    function leadingExecutor(leader, followers /*optional*/){
       var l = leader;
       var fs = _.without(_.flatten(_.rest(arguments, 1)), null, undefined);
       var params = {leader:l, followers:fs};
+      return new Proxy(params, LeadingExecuteProxy);
+    }
+
+    exports.leadingExecutor = leadingExecutor;
+
+
+    var BatchExecuteProxy = {
+      get: function(target, method, receiver){
+        //target : {ah: null, extra: []}
+        var _followers = target.handlers;
+
+        var ehfs = _.without(_.map(_followers, function(eh){
+          var ef = eh[method];
+          return _.isFunction(ef)? [eh, ef] : null;
+        }), undefined, null);
+        if(ehfs.length == 0) {
+          return function () {
+          };
+        }
+        return function(){
+          var args = arguments;
+          _.each(ehfs, function(ehf){
+            var eh = ehf[0];
+            var ef = ehf[1];
+            ef.apply(eh, args);
+          })
+        }
+
+        return function () {};
+      }
+    };
+
+    function batchExecutor(leader, followers /*optional*/){
+      var l = leader;
+      var fs = _.without(_.flatten(arguments), null, undefined);
+      var params = {handlers:fs};
       return new Proxy(params, BatchExecuteProxy);
     }
 
-    exports.handlerExecutor = batchExecutor;
+    exports.batchExecutor = batchExecutor;
 
 
     var InsertLeadingArgumentsCallProxy = {

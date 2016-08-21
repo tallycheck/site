@@ -8,6 +8,7 @@ define(
     var dm = require('datamap');
     var modal = require('jsx!modules/modal');
     var CommonMsg = require('i18n!../nls/common');
+    var UriTemplate = require('UriTemplate');
     var EntityMsg = require('i18n!../nls/entity');
     var jui = require('jquery-ui');
     var juitp = require('jquery-ui-timepicker');

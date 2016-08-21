@@ -9,6 +9,11 @@ define({
   "GRID_ACTION_delete": "刪除",
   "GRID_ACTION_save": "保存",
 
+  "Select" : "选择",
+  SelectField : function(fieldName){
+    return "选择 " + fieldName;
+  },
+
   ActionOnType: function (action, type) {
     var friendlyAction = this["GRID_ACTION_" + action];
     return friendlyAction + " " + type;
@@ -28,7 +33,8 @@ define({
     return "" + from + " - " + to + " (共 " + total + " 条记录)";
   },
 
-  "FieldForeignKeyNotSelected": "(No value selected)",
+  "FieldForeignKeyNotSelected": "(未选择)",
+  "FieldForeignKeyLookup" : "选择",
 
   readFailed: "读取失败"
 });

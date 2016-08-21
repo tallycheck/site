@@ -54,7 +54,8 @@ define(
           <button type="button" className="btn btn-default btn-negative" onClick={this.onNegativeButtonClick}
                   data-dismiss="modal">{CommonMsg.cancel}</button> : <span/>;
         var closeBtn = close ?
-          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">{CommonMsg.close}</button> : <span/>;
+          <button type="button" className="btn btn-default btn-close" data-dismiss="modal">{CommonMsg.close}</button> :
+          <span/>;
         var div = ( <div>
           {posBtn}
           {negBtn}
@@ -132,20 +133,19 @@ define(
       ProcessingContent: ProcessingContent
     };
 
-
     class ModalSpecBase {
       constructor(options, handlers) {
         this.options = _.extend({}, this.defaultOptions(), options);
         var _entryContent = this.entryContent;
-        if(_entryContent == null){
+        if (_entryContent == null) {
           _entryContent = this.defaultEntryContent;
         }
-        if(_.isFunction(_entryContent)){
+        if (_.isFunction(_entryContent)) {
           _entryContent = _entryContent.apply(this);
         }
-        if(_entryContent instanceof ModalContent){
+        if (_entryContent instanceof ModalContent) {
           this.content = _entryContent;
-        }else{
+        } else {
           throw new Error("Entry Content Undefined");
         }
 
@@ -164,7 +164,7 @@ define(
         return {};
       }
 
-      pushHandlers(){
+      pushHandlers() {
         this.handlers.pushHandlers.apply(this.handlers, arguments);
         return this;
       }
@@ -196,52 +196,68 @@ define(
       }
     }
 
-
     //Modal used to show ModalSpec
-    var Modal = React.createClass({
-      statics: {
-        makeIsolatedUpdateContentListener: function (modal) {
-          return {
-            onContentUpdated: function (spec, oldContent, newContent) {
-              modal.setContent(newContent);
-            }
-          };
-        }
-      },
-      updateContentListener: undefined,
-      getDefaultProps: function () {
+    var ModalDefaultProps = {
+      modalStack: null,
+      isFirst: false,
+      animate: false,
+      spec: new ModalSpecBase(),
+      name: "Modal"
+    }
+    var ModalStatics = {
+      defaultProps: ModalDefaultProps,
+    }
+    class Modal extends React.Component {
+      static makeIsolatedUpdateContentListener(modal) {
         return {
-          modalStack: null,
-          isFirst: false,
-          animate: false,
-          spec: new ModalSpecBase(),
-          name: "Modal"
+          onContentUpdated: function (spec, oldContent, newContent) {
+            modal.setContent(newContent);
+          }
         };
-      },
-      getInitialState: function () {
-        var spec = this.props.spec;
-        return {content: null};
-      },
-      setContent: function (content) {
+      }
+
+      constructor(props) {
+        super(props);
+        this.updateContentListener = undefined;
+        this.state = {content: null};
+        this.onHideBsModal = this.onHideBsModal.bind(this);
+        this.onHiddenBsModal = this.onHiddenBsModal.bind(this);
+      }
+
+      setContent(content) {
         this.setState({content: content});
-      },
-      componentDidMount: function () {
+      }
+
+      setState() {
+        super.setState.apply(this, arguments);
+      }
+
+      componentDidMount() {
         var spec = this.props.spec;
         this.updateContentListener = Modal.makeIsolatedUpdateContentListener(this);
         spec.registerListener(this.updateContentListener);
         this.setState({content: spec.getContent()});
-      },
-      componentWillUnmount: function () {
+        this.bindModalHideEvent(true);
+      }
+
+      componentWillUnmount() {
         var spec = this.props.spec;
         spec.unregisterListener(this.updateContentListener);
-      },
-      shouldComponentUpdate: function (nextProps, nextState, nextContext) {
+        this.bindModalHideEvent(false);
+      }
+
+      shouldComponentUpdate(nextProps, nextState, nextContext) {
         if (!_.isEqual(nextProps, this.props) || !_.isEqual(nextState, this.state) || !_.isEqual(nextContext, this.context)) {
           return true;
         }
         return false;
-      },
-      componentDidUpdate: function () {
+      }
+
+      componentDidUpdate(prevProps, prevState, prevContext, rootNode) {
+        var ps = prevState;
+        var ns = this.state;
+        var pContent = ps.content;
+        var nContent = ns.content;
         var spec = this.props.spec;
         var modalStack = this.props.modalStack;
         var modal = ReactDOM.findDOMNode(this.refs.modalRoot);
@@ -250,27 +266,53 @@ define(
           backdrop: this.props.isFirst,
           keyboard: false
         });
-        $modal.on('hide.bs.modal', function (event) {
-          var $ele = $(event.delegateTarget);
-          modalStack.popModalSpec(spec);
-        });
-        $modal.on('hidden.bs.modal', function (event) {
-          var $ele = $(event.delegateTarget);
-          modalStack.onModalHidden(spec);
-        });
-        var content = this.state.content;
-        if (content == null) {
-          this.hide();
-        } else {
-          content.onShown(this, spec);
+        this.bindModalHideEvent(true);
+        if(pContent != nContent){
+          var content = nContent;
+          if (content == null) {
+            this.hide();
+          } else {
+            content.onShown(this, spec);
+          }
         }
-      },
-      hide: function () {
+      }
+
+      bindModalHideEvent(bind) {
+        var modal = ReactDOM.findDOMNode(this.refs.modalRoot);
+        var $modal = $(modal);
+        if (bind) {
+          this.bindModalHideEvent(false);
+          $modal.on('hide.bs.modal', this, this.onHideBsModal);
+          $modal.on('hidden.bs.modal', this, this.onHiddenBsModal);
+        } else {
+          $modal.off('hide.bs.modal', this.onHideBsModal);
+          $modal.off('hidden.bs.modal', this.onHiddenBsModal);
+        }
+      }
+
+      onHideBsModal(event) {
+        var spec = this.props.spec;
+        var modalStack = this.props.modalStack;
+
+        var $ele = $(event.delegateTarget);
+        modalStack.popModalSpec(spec);
+      }
+
+      onHiddenBsModal(event) {
+        var spec = this.props.spec;
+        var modalStack = this.props.modalStack;
+
+        var $ele = $(event.delegateTarget);
+        modalStack.onModalHidden(spec);
+      }
+
+      hide() {
         var modal = ReactDOM.findDOMNode(this.refs.modalRoot);
         var $modal = $(modal);
         $modal.modal('hide');
-      },
-      render: function () {
+      }
+
+      render() {
         var content = this.state.content;
         if (content == null) content = new BlankContent();
         content.setModal(this);
@@ -297,74 +339,82 @@ define(
           </div>
         </div>);
       }
-    });
+    }
+    _.extend(Modal, ModalStatics);
 
+    var ModalStackDefaultProps = {
+      baseZIndex: 2000
+    }
+    var ModalStackStatics = {
+      defaultProps: ModalStackDefaultProps,
+    }
     var ModalStackContainerId = "moduleStackContainer";
     var ModalStackContainerSelector = 'body > div#moduleStackContainer';
-    var ModalStack = React.createClass({
-      statics: {
-        getPageStack: function () {
-          var ModalStackDataKey = 'modal-stack.data.key';
+    class ModalStack extends React.Component {
+      static getPageStack() {
+        var ModalStackDataKey = 'modal-stack.data.key';
 
-          var $stack = $(ModalStackContainerSelector);
-          switch ($stack.length) {
-            case 0:
-            {
-              var newContainer = $('<div>', {'id': ModalStackContainerId});
-              $('body').append(newContainer);
-              $stack = $(ModalStackContainerSelector);
-              var stack0 = $stack[0]
-              var ele = React.createElement(ModalStack, {});
-              var ms = ReactDOM.render(ele, stack0);
-              $(stack0).data(ModalStackDataKey, ms);
-              return ms;
-            }
-            case 1:
-            {
-              return $($stack[0]).data(ModalStackDataKey);
-            }
-            default:
-              throw new Error("Multiple moduleStackContainer found!");
+        var $stack = $(ModalStackContainerSelector);
+        switch ($stack.length) {
+          case 0:
+          {
+            var newContainer = $('<div>', {'id': ModalStackContainerId});
+            $('body').append(newContainer);
+            $stack = $(ModalStackContainerSelector);
+            var stack0 = $stack[0]
+            var ele = React.createElement(ModalStack, {});
+            var ms = ReactDOM.render(ele, stack0);
+            $(stack0).data(ModalStackDataKey, ms);
+            return ms;
           }
-        },
-        dropPageStack: function () {
-          var $stack = $(ModalStackContainerSelector);
-          switch ($stack.length) {
-            case 0:
-            {
-              return;
-            }
-            case 1:
-            {
-              var stack0 = $stack[0]
-              var umok = ReactDOM.unmountComponentAtNode(stack0);
-              $stack.remove();
-              break;
-            }
-            default:
-              throw new Error("Multiple moduleStackContainer found!");
+          case 1:
+          {
+            return $($stack[0]).data(ModalStackDataKey);
           }
+          default:
+            throw new Error("Multiple moduleStackContainer found!");
         }
-      },
-      getDefaultProps: function () {
-        return {baseZIndex: 2000};
-      },
-      getInitialState: function () {
-        return {
+      }
+
+      static dropPageStack() {
+        var $stack = $(ModalStackContainerSelector);
+        switch ($stack.length) {
+          case 0:
+          {
+            return;
+          }
+          case 1:
+          {
+            var stack0 = $stack[0]
+            var umok = ReactDOM.unmountComponentAtNode(stack0);
+            $stack.remove();
+            break;
+          }
+          default:
+            throw new Error("Multiple moduleStackContainer found!");
+        }
+      }
+
+      constructor(props) {
+        super(props);
+        this.state = {
           modalSpecs: [],
           animateLast: true
         };
-      },
-      getTopModal: function () {
+      }
+
+      getTopModal() {
         return this.props.modalSpecs.last();
-      },
-      componentDidUpdate: function (prevProps, prevState, prevContext, rootNode) {
+      }
+
+      componentDidUpdate(prevProps, prevState, prevContext, rootNode) {
         var startState = prevState;
         var endState = this.state;
         var startLen = startState.modalSpecs.length;
         var endLen = endState.modalSpecs.length;
-      },
-      render: function () {
+      }
+
+      render() {
         var count = this.state.modalSpecs.length;
         var _this = this;
         var modals = _.map(this.state.modalSpecs, function (spec, idx) {
@@ -376,28 +426,31 @@ define(
                         animate={animate}/>;
         });
         return <div>{modals}</div>;
-      },
-      pushModalSpec: function (modalSpec) {
+      }
+
+      pushModalSpec(modalSpec) {
         var specs = _.union(this.state.modalSpecs, [modalSpec]);
         this.setState({
           modalSpecs: specs,
           animateLast: true
         });
-      },
-      popModalSpec: function (spec) {
+      }
+
+      popModalSpec(spec) {
         var specs = _.without(this.state.modalSpecs, spec);
         this.setState({
           modalSpecs: specs,
           animateLast: false
         });
-      },
-      onModalHidden: function (spec) {
+      }
+
+      onModalHidden(spec) {
         if (this.state.modalSpecs.length == 0) {
           ModalStack.dropPageStack();
         }
       }
-    });
-
+    }
+    _.extend(ModalStack, ModalStackStatics);
 
     exports.ModalStack = ModalStack;
     exports.ModalSpecBase = ModalSpecBase;

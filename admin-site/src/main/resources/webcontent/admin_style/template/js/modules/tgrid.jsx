@@ -9,6 +9,7 @@ define(
     var Debugger = require('debugger');
     var math = require('math');
     var modal = require('jsx!modules/modal');
+    var HandlersComp = require('./handlers');
     var UriTemplate = require('UriTemplate');
     var UrlUtil = require('url-utility');
     var TGridDA = require('./tgrid/data');
@@ -23,6 +24,8 @@ define(
     var EntityResponse = require('entity-response');
     var ModalHandlersPath = './modal-handlers';
     var EntityModalSpecsPath = 'jsx!./entity-modal-specs';
+    var HandlerUtils = require('handler-utils');
+    var BatchExecutor = HandlerUtils.batchExecutor;
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -46,6 +49,14 @@ define(
     var ENABLE_DEBUG_LOG_4_ACTION = true;
     var HIDE_URL_PAGESIZE = true;
 
+    var SelectedIndexChangeHandlerTemplate = {
+      onSelectedIndexWillChange: null, //function(oldIndex, newIndex, oldBean, newBean)
+      onSelectedIndexChanged: null, //function(oldIndex, newIndex, oldBean, newBean)
+      onDoubleClick:null, // function(rowIndex, rowBean)
+    }
+    var TGridHandlersTemplate = {
+      actionsHandlers: null, //SelectedIndexChangeHandlerTemplate
+    }
     var TGridDefaultProps = {
       isMain: false,
     }
@@ -86,6 +97,8 @@ define(
           csrf: csrf,
           version: this.updateVersion
         };
+        this.handlers = new HandlersComp.HandlerContainer(TGridHandlersTemplate);
+        this.handlers.pushHandlers(props.handlers);
         this.doResize = this.doResize.bind(this);
       }
 
@@ -178,6 +191,12 @@ define(
         body.syncHeaderColumns();
       }
 
+      setState(){
+        var oldBeansMap = this.state.beansMap;
+        var newBeansMap = arguments[0].beansMap;
+        super.setState.apply(this, arguments);
+      }
+
       componentDidMount() {
         var node = ReactDOM.findDOMNode(this);
         new ResizeSensor(node, this.doResize);
@@ -187,6 +206,10 @@ define(
       componentWillUnmount() {
         var node = ReactDOM.findDOMNode(this);
         ResizeSensor.detach(node, this.doResize);
+        $.doTimeout('updateurl-all');
+        $.doTimeout('updateurl');
+        $.doTimeout('loadpending');
+        $.doTimeout('acquirelock');
       }
 
       shouldComponentUpdate(nextProps, nextState, nextContext) {
@@ -257,7 +280,14 @@ define(
         );
       }
 
+      onSelectedIndexWillChange(oldBean, newBean, oldIndex, newIndex) {
+        var selIdxChangeHandler = BatchExecutor(this.handlers.actionsHandlers);
+        selIdxChangeHandler.onSelectedIndexWillChange(oldIndex, newIndex, oldBean, newBean);
+      }
+
       onSelectedIndexChanged(oldBean, newBean, oldIndex, newIndex) {
+        var selIdxChangeHandler = BatchExecutor(this.handlers.actionsHandlers);
+        selIdxChangeHandler.onSelectedIndexChanged(oldIndex, newIndex, oldBean, newBean);
         console.log("selected index changed: " + oldIndex + " -> " + newIndex);
         if (newBean) {
           var idField = this.state.entityContext.idField;
@@ -286,6 +316,14 @@ define(
       }
 
       onScroll() {
+
+      }
+
+      notifyRowDoubleClick(rowIndex, rowBean){
+        var selIdxChangeHandler = BatchExecutor(this.handlers.actionsHandlers);
+        selIdxChangeHandler.onDoubleClick(rowIndex, rowBean);
+
+        console.log("dbClick " + rowIndex);
 
       }
 
@@ -446,6 +484,11 @@ define(
         return new GridDataAccess(this);
       }
 
+      selectedBean(){
+        var body = this.refs.body;
+        return body.selectedBean();
+      }
+
       requestDoFilterByFilters(caller) {
         if (caller.constructor.name != 'FilterHolder')
           throw new Error("Type error.");
@@ -487,6 +530,9 @@ define(
       }
 
       triggerLoadPending() {
+        if(this.busy()) {
+          return;
+        }
         var _this = this;
         doTimeout("loadpending", fetchDebounce, function () {
           _this.doLoadPending();
@@ -498,8 +544,7 @@ define(
         if (_.isObject(queryParam)) {
           var range = queryParam.range;
           if (range) {
-            var loadAlign = range.fromEnd ? (range.hi - 1) : range.lo;
-            loadingIndexAlign = loadAlign;
+            loadingIndexAlign = range.anchor || range.lo;
           }
         }
         if (queryParam == null) return;
@@ -531,13 +576,15 @@ define(
             var response = data;
             var queryResult = response.data;
             _grid.updateStateBy(queryResult, ffresh);
-            _grid.triggerLoadPending();
           },
 
-          onComplete: function (param) {
+          onResultDidProcess: function (success, param) {
             _grid.releaseLock();
             _grid.getSpinner().setLoadingIndex(null);
-            _grid.updateMainUrl(true, param);
+            if(success){
+              _grid.triggerLoadPending();
+              _grid.updateMainUrl(true, param);
+            }
           }
         }
         EntityRequest.query(queryParam, null, queryRequestHandler);

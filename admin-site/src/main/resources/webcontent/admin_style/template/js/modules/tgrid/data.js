@@ -28,9 +28,17 @@ define(
         var total = this.grid.state.totalRecords || 0;
         return new Range(0, total);
       },
-      getVisibleRange : function(){
+      getVisibleRange : function(float){
         var body = this.grid.refs.body;
-        return body.visibleRange();
+        return body.visibleRange(float);
+      },
+      getVisibleTopIndex : function(float){
+        var body = this.grid.refs.body;
+        return body.visibleTopIndex(float);
+      },
+      getVisibleBottomIndex : function(float){
+        var body = this.grid.refs.body;
+        return body.visibleBottomIndex(float);
       },
       getLoadedRanges : function(){
         return this.grid.state.recordRanges;
@@ -109,21 +117,31 @@ define(
       screenPendingRange :function(){
         var fullRange = this.getFullIndexRange();
         var visibleRange = this.getVisibleRange();
-        var visibleMissingRange = fullRange.intersect(visibleRange);
+        var dataWindowRange = fullRange.intersect(visibleRange);
 
-        if(visibleMissingRange == null || visibleMissingRange.width() < 1){
+        if(dataWindowRange == null || dataWindowRange.width() < 1){
           return null;
         }
         var loadedRanges = this.getLoadedRanges();
-        var missingRanges = loadedRanges.findMissingRangesWithin(visibleMissingRange);
-        var missing0 = missingRanges.first();
+        var inWindowMissingRanges = loadedRanges.findMissingRangesWithin(dataWindowRange);
+        var inWindowMissing0 = inWindowMissingRanges.first();
 
-        if(missing0) {
+        if(inWindowMissing0) {
           var pageSize = this.getPageSize();
-          var fromEnd = (missing0.lo == visibleMissingRange.lo);
-          missing0 = missing0.subRange(pageSize, fromEnd);
-          var toLoadRange = fullRange.intersect(missing0);
-          toLoadRange.fromEnd = fromEnd;
+          var startIndex = inWindowMissing0.lo;
+          var anchor = inWindowMissing0.lo;
+          var traceUp = (inWindowMissing0.lo == dataWindowRange.lo);
+          if(traceUp){
+            var traceUpMissing = loadedRanges.findSlot(inWindowMissing0.lo, fullRange.hi);
+            if(traceUpMissing){
+              var diff = startIndex - traceUpMissing.lo;
+              startIndex = Math.floor(diff / pageSize) * pageSize + traceUpMissing.lo;
+            }
+            anchor = this.getVisibleTopIndex(true);
+          }
+
+          var toLoadRange = new Range(startIndex, startIndex + pageSize);
+          toLoadRange.anchor = anchor;
           return toLoadRange;
         }else{
           return null;

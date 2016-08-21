@@ -10,7 +10,7 @@ define(
     var Debugger = require('debugger');
     var UrlUtil = require('url-utility');
     var HandlerUtils = require('handler-utils');
-    var actionHandlerExecutor = HandlerUtils.handlerExecutor;
+    var LeadingExecutor = HandlerUtils.leadingExecutor;
     var ENABLE_REQUEST_DEBUG = false;
 
     class RequestHandler {
@@ -104,7 +104,7 @@ define(
       handler = ensureHandler(handler, CreateGetHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, CreateReadDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var request = {
         url: fParam.url,
         type: "get"
@@ -122,7 +122,7 @@ define(
       handler = ensureHandler(handler, CreateHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, CreateDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var request = {
         url: fParam.url,
         type: "post",
@@ -155,7 +155,7 @@ define(
       handler = ensureHandler(handler, ReadHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, ReadDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var request = {
         url: fParam.url,
         type: "get",
@@ -173,7 +173,7 @@ define(
       handler = ensureHandler(handler, UpdateHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, UpdateDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var request = {
         url: fParam.url,
         type: "post",
@@ -213,7 +213,7 @@ define(
       handler = ensureHandler(handler, DeleteHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, DeleteDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var postData = {
         _csrf: fParam.csrf,
         type: fParam.type,
@@ -280,7 +280,7 @@ define(
       handler = ensureHandler(handler, QueryHandler);
       var extraHandlers = _.rest(arguments, 2);
       var fParam = _.extend({}, QueryDefaultParam, param);
-      var fHandler = actionHandlerExecutor(handler, extraHandlers);
+      var fHandler = LeadingExecutor(handler, extraHandlers);
       var url = handler.buildUrl(fParam);
       if (url == null) return;
 

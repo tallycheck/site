@@ -25,7 +25,7 @@ define(
     var EntityRequest = require('entity-request');
     var EntityResponse = require('entity-response');
     var HandlerUtils = require('handler-utils');
-    var HandlerExecutor = HandlerUtils.handlerExecutor;
+    var LeadingExecutor = HandlerUtils.leadingExecutor;
 
     var React = require('react');
     var ReactDOM = require('react-dom');
@@ -247,7 +247,7 @@ define(
       doDelete() {
         function deleteTFormHandler(tform) {
           var handlers = _.without(_.flatten([tform.handlers.deleteFormHandlers]), null, undefined);
-          var tformHandler = HandlerExecutor(new TFormHandler(), handlers);
+          var tformHandler = LeadingExecutor(new TFormHandler(), handlers);
           return tformHandler;
         }
 
@@ -284,7 +284,7 @@ define(
         function submitTFormHandler(tform) {
           var handlers = _.without(_.flatten([tform.handlers.submitFormHandlers]), null, undefined);
           handlers = ((handlers.length > 0) ? handlers : [TForm.defaultSubmitFormHandler]);
-          var tformHandler = HandlerExecutor(new TFormHandler(), handlers);
+          var tformHandler = LeadingExecutor(new TFormHandler(), handlers);
           return tformHandler;
         }
 

@@ -216,6 +216,39 @@ define(['underscore'], function(_) {
       return result;
     }
 
+    static findSlot(ranges, postion, limit) {
+      if (!(limit instanceof Range)) {
+        limit = new Range(limit, limit + 1);
+      }
+      var length = ranges.length;
+      var array = ranges;
+      for(var i = 0 ; i < length; ++i)
+      {
+        var r1 = ranges[i];
+        var r2 = ((i + 1) < length ) ? array[i + 1] : limit;
+        if (r1.lo > postion) {
+          return null;
+        }
+        if (r1.hi > postion) {
+          return null;
+        }
+        if (r2.lo > postion) {
+          return new Range(r1.hi, r2.lo);
+        }
+      }
+      return null;
+
+      //for(var i = 0 ; i < ranges.length - 1; ++ i){
+      //  var r1 = ranges[i];
+      //  var r2 = ranges[i+1];
+      //  if(r1.lo > postion)return null;
+      //  if(r1.hi > postion)return null;
+      //  if(r2.lo > postion) return new Range(r1.hi, r2.lo);
+      //  if(i == (ranges.length -2)) return new Range(r2.hi, postion);
+      //}
+      //return null;
+    }
+
     static findMissingRangesWithin(ranges, from, to) {
       var mainRange = new Range(from, to);
       var intersects = this.intersect(ranges, mainRange);
@@ -294,6 +327,10 @@ define(['underscore'], function(_) {
         return this.ranges[this.ranges.length - 1];
       }
       return null;
+    }
+
+    findSlot(postion, limit){
+      return Ranges.findSlot(this.ranges, postion, limit);
     }
 
     merge(){

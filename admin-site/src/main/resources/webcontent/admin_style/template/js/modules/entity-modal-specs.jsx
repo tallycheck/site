@@ -13,7 +13,8 @@ define(
     var EntityMsg = require('i18n!./nls/entity');
     var EntityRequest = require('entity-request');
     var HandlerUtils = require('handler-utils');
-    var HandlerExecutor = HandlerUtils.handlerExecutor;
+    var LeadingExecutor = HandlerUtils.leadingExecutor;
+    var BatchExecutor = HandlerUtils.batchExecutor;
     var ModalHandlersComp = require('./modal-handlers');
 
     var React = require('react');
@@ -66,6 +67,24 @@ define(
       }
     }
 
+    class ReadFailContent extends ModalContents.MessageContent {
+      constructor(options, response) {
+        var opts = _.extend({}, {titleText: EntityMsg.readFailed}, options, { response: response});
+        super(opts);
+      }
+
+      getBody() {
+        var response = this.options.response;
+        var errors = response.errors.global;
+        var eEles = _.map(errors, function (error, i) {
+          return <span key={i} className="modal-error">{error}</span>
+        });
+        return (<div className="message">
+          {eEles}
+        </div>);
+      }
+    }
+
     class CreateSpec extends ModalSpecBase {
       constructor(options, handlers) {
         super(options, handlers);
@@ -101,23 +120,19 @@ define(
             });
           }
 
-          getFooter() {
-            return this.getGenericFooter(false, false, false);
-          }
-
           onShown(modal, spec) {
-            var specOptions = _spec.options;
+            var options = _spec.options;
             var readParam = {
-              url: specOptions.url,
+              url: options.url,
             };
             var navContentRequestHandler = {
               onSuccess: function (data, param) {
                 var response = data.data;
-                _spec.updateContent(_spec.viewEntityContent(response));
+                _spec.updateContent(_spec.createEditContent(response));
               }
             };
-            var requestHandler = HandlerExecutor(new EntityRequest.RequestHandler(),
-              specOptions.createGetRequestHandlers, navContentRequestHandler);
+            var requestHandler = LeadingExecutor(new EntityRequest.RequestHandler(),
+              options.createGetRequestHandlers, navContentRequestHandler);
 
             EntityRequest.createGet(readParam, null, requestHandler);
           }
@@ -125,9 +140,9 @@ define(
         return new LoadingEntityContent();
       }
 
-      viewEntityContent(response) {
+      createEditContent(response) {
         var _spec = this;
-        class ViewEntityContent extends ViewEntityContentBase {
+        class EditEntityContent extends ViewEntityContentBase {
           constructor(options) {
             super(options, response);
           }
@@ -138,8 +153,8 @@ define(
             var handlers = _spec.handlers;
             var actionsContainerFinder = this.actionsContainerFinder();
 
-            var modalHandler = HandlerExecutor(new ModalHandler(),
-              _spec.handlers.createSubmitModalHandlers);
+            var modalHandler = LeadingExecutor(new ModalHandler(),
+              handlers.createSubmitModalHandlers);
             var createSubmitModalRequestHandler = ModalRequestHandler(modal, modalHandler);
 
             var ele = React.createElement(TForm, {
@@ -153,7 +168,7 @@ define(
             return ele;
           }
         }
-        return new ViewEntityContent();
+        return new EditEntityContent();
       }
     }
 
@@ -194,27 +209,24 @@ define(
             });
           }
 
-          getFooter() {
-            return this.getGenericFooter(false, false, false);
-          }
-
           onShown(modal, spec) {
-            var specOptions = _spec.options;
+            var options = _spec.options;
+            var handlers = _spec.handlers;
             var readParam = {
-              url: specOptions.url,
+              url: options.url,
             }
             var navContentRequestHandler = {
               onSuccess: function (data, param) {
                 var response = data.data;
-                _spec.updateContent(_spec.viewEntityContent(response));
+                _spec.updateContent(_spec.readContent(response));
               },
               onFail: function (data, param) {
                 var response = data.data;
-                _spec.updateContent(_spec.viewReadFailContent(response));
+                _spec.updateContent(_spec.readFailContent(response));
               }
             };
-            var requestHandler = HandlerExecutor(new EntityRequest.RequestHandler(),
-              specOptions.readRequestHandlers, navContentRequestHandler);
+            var requestHandler = LeadingExecutor(new EntityRequest.RequestHandler(),
+              handlers.readRequestHandlers, navContentRequestHandler);
 
             EntityRequest.read(readParam, null, requestHandler);
           }
@@ -222,7 +234,7 @@ define(
         return new LoadingEntityContent();
       }
 
-      viewEntityContent(response) {
+      readContent(response) {
         var _spec = this;
         class ViewEntityContent extends ViewEntityContentBase {
           constructor(options) {
@@ -235,11 +247,11 @@ define(
             var handlers = _spec.handlers;
             var actionsContainerFinder = this.actionsContainerFinder();
 
-            var submitModalHandler = HandlerExecutor(new ModalHandler(),
+            var submitModalHandler = LeadingExecutor(new ModalHandler(),
               _spec.handlers.updateSubmitModalHandlers);
             var updateSubmitModalRequestHandler = ModalRequestHandler(modal, submitModalHandler);
 
-            var deleteModalHandler = HandlerExecutor(new ModalHandler(), handlers.deleteModalHandlers);
+            var deleteModalHandler = LeadingExecutor(new ModalHandler(), handlers.deleteModalHandlers);
             var deleteModalRequestHandler = ModalRequestHandler(modal, deleteModalHandler);
 
             var ele = React.createElement(TForm, {
@@ -257,26 +269,8 @@ define(
         return new ViewEntityContent();
       }
 
-      viewReadFailContent(response) {
-        class ReadFailContent extends ModalContents.MessageContent {
-          constructor() {
-            super({
-              titleText: EntityMsg.readFailed
-            });
-          }
-
-          getBody() {
-            var errors = response.errors.global;
-            var eEles = _.map(errors, function (error, i) {
-              return <span key={i} className="modal-error">{error}</span>
-            });
-            return (<div className="message">
-              {eEles}
-            </div>);
-          }
-
-        }
-        return new ReadFailContent();
+      readFailContent(response) {
+        return new ReadFailContent({}, response);
       }
     }
 
@@ -338,17 +332,13 @@ define(
             });
           }
 
-          getFooter() {
-            return this.getGenericFooter(false, false, false);
-          }
-
           onShown(modal, spec) {
-            var specOptions = _spec.options;
+            var options = _spec.options;
             var delParam = {
-              url: specOptions.url,
-              csrf: specOptions.csrf,
-              type: specOptions.type,
-              ceilingType: specOptions.ceilingType,
+              url: options.url,
+              csrf: options.csrf,
+              type: options.type,
+              ceilingType: options.ceilingType,
             };
             var handlers = _spec.handlers;
             var modalRequestHandler = null;//ModalRequestHandler(modal, modalHandler);
@@ -378,7 +368,221 @@ define(
       }
     }
 
+    class QuerySpec extends ModalSpecBase {
+      constructor(options, handlers) {
+        super(options, handlers);
+      }
+
+      defaultOptions() {
+        return {
+          url: '',
+          contentTitle : ''
+        }
+      }
+
+      defaultHandlers() {
+        return {
+          queryRequestHandlers: undefined,
+        };
+      }
+
+      entryContent() {
+        return this.loadingContent();
+      }
+
+      loadingContent() {
+        var _spec = this;
+        class LoadingEntityContent extends ModalContents.ProcessingContent {
+          constructor() {
+            super({
+              titleText: CommonMsg.loading,
+              bodyText: CommonMsg.loading
+            });
+          }
+
+          onShown(modal, spec) {
+            var options = _spec.options;
+            var handlers = _spec.handlers;
+            var queryParam = {
+              url: options.url,
+            }
+            var navContentRequestHandler = {
+              onSuccess: function (data, param) {
+                var response = data.data;
+                _spec.updateContent(_spec.queryContent(response));
+              },
+              onFail: function (data, param) {
+                var response = data.data;
+                _spec.updateContent(_spec.queryFailContent(response));
+              }
+            };
+            var requestHandler = LeadingExecutor(new EntityRequest.RequestHandler(),
+              handlers.queryRequestHandlers, navContentRequestHandler);
+
+            EntityRequest.query(queryParam, null, requestHandler);
+          }
+        }
+        return new LoadingEntityContent();
+      }
+
+      queryContent(response) {
+        var _spec = this;
+        class ListEntityContent extends ModalContents.ModalContent {
+          constructor(options) {
+            var opts = _.extend({}, options, {response: response});
+            super(opts);
+          }
+          getTitle() {
+            var options = _spec.options;
+            return options.contentTitle;
+          }
+          getBody() {
+            var TGrid = TGridComp.TGrid;
+            var modal = this.modal;
+            var handlers = _spec.handlers;
+
+            var ele = React.createElement(TGrid, {
+              ref: "tGrid",
+              handlers : {
+              }
+            });
+            return ele;
+          }
+
+          getFooter() {
+            return this.getGenericFooter(false, false, true);
+          }
+
+          onShown(modal, spec) {
+            var tgrid = modal.refs.tGrid;
+            var response = this.options.response;
+            tgrid.updateStateBy(response, true);
+          }
+        }
+        return new ListEntityContent();
+      }
+
+      queryFailContent(response) {
+        class QueryFailContent extends ModalContents.MessageContent {
+          constructor() {
+            super({
+              titleText: EntityMsg.readFailed
+            });
+          }
+
+          getBody() {
+            var errors = response.errors.global;
+            var eEles = _.map(errors, function (error, i) {
+              return <span key={i} className="modal-error">{error}</span>
+            });
+            return (<div className="message">
+              {eEles}
+            </div>);
+          }
+
+        }
+        return new QueryFailContent();
+      }
+    }
+
+    class FieldSelectSpec extends QuerySpec{
+      constructor(options, handlers) {
+        super(options, handlers);
+        this.options.contentTitle = EntityMsg.SelectField(this.options.fieldName);
+      }
+
+      defaultOptions() {
+        return {
+          url: '',
+          fieldName : ''
+        }
+      }
+
+      defaultHandlers() {
+        var modalActionHandlersSample = {
+          onSelectDone:function(modal, tgrid){},
+          onRecordDoubleClick:function(modal, tgrid, bean){}
+        }
+        return _.extend({}, super.defaultHandlers(), {
+          actionsHandlers : undefined,
+          modalActionHandlers : undefined,
+        });
+      }
+
+      queryContent(response) {
+        var _spec = this;
+        class ListEntityContent extends ModalContents.ModalContent {
+          constructor(options) {
+            var opts = _.extend({}, options, {response: response});
+            super(opts);
+          }
+          getTitle() {
+            var options = _spec.options;
+            return options.contentTitle;
+          }
+          getBody() {
+            var TGrid = TGridComp.TGrid;
+            var modal = this.modal;
+            var handlers = _spec.handlers;
+
+            var selectedIndexChangeHandler = {
+              onSelectedIndexWillChange: null, //function(oldIndex, newIndex, oldBean, newBean)
+              onSelectedIndexChanged: function(oldIndex, newIndex, oldBean, newBean){
+                modal.setState({chosen: newBean});
+              },
+              onDoubleClick:function(rowIndex, rowBean){
+                var tgrid = modal.refs.tGrid;
+                var modalActionHandler = BatchExecutor(handlers.modalActionHandlers);
+                modalActionHandler.onRecordDoubleClick(modal, tgrid, rowBean);
+              }
+            }
+
+            var ele = React.createElement(TGrid, {
+              ref: "tGrid",
+              handlers : {
+                actionsHandlers : [handlers.actionsHandlers, selectedIndexChangeHandler]
+              }
+            });
+            return ele;
+          }
+
+          onSelectButtonClick(){
+            var modal = this.modal;
+            var tgrid = modal.refs.tGrid;
+            var handlers = _spec.handlers;
+            var modalActionHandler = BatchExecutor(handlers.modalActionHandlers);
+            modalActionHandler.onSelectDone(modal, tgrid);
+            modal.hide();
+          }
+
+          getFooter() {
+            var noneChosen = (null == this.modal.state.chosen );
+            var selectBtn =
+              <button type="button" className="btn btn-default " onClick={this.onSelectButtonClick.bind(this)} disabled={noneChosen}>
+                <span className="fa fa-check" aria-hidden="true"></span>
+                {CommonMsg.select}</button> ;
+            var cancelBtn =
+              <button type="button" className="btn btn-default btn-close" data-dismiss="modal">
+                {CommonMsg.cancel}</button> ;
+            return (<div>
+              {selectBtn}
+              {cancelBtn}
+            </div>);
+          }
+
+          onShown(modal, spec) {
+            var tgrid = modal.refs.tGrid;
+            var response = this.options.response;
+            tgrid.updateStateBy(response, true);
+          }
+        }
+        return new ListEntityContent();
+      }
+    }
+
     exports.Create = CreateSpec;
     exports.Read = ReadSpec;
     exports.Delete = DeleteSpec;
+    exports.Query = QuerySpec;
+    exports.FieldSelect = FieldSelectSpec;
   });

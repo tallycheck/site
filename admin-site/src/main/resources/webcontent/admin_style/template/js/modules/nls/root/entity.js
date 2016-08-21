@@ -9,6 +9,11 @@ define({
   "GRID_ACTION_delete": "Delete",
   "GRID_ACTION_save": "Save",
 
+  "Select" : "Select",
+  SelectField : function(fieldName){
+    return "Select " + fieldName;
+  },
+
   ActionOnType: function (action, type) {
     var friendlyAction = this["GRID_ACTION_" + action];
     return friendlyAction + " " + type;
@@ -29,6 +34,7 @@ define({
   },
 
   "FieldForeignKeyNotSelected": "(No value selected)",
+  "FieldForeignKeyLookup" : "Lookup",
 
   readFailed: "Read Failed"
 });
